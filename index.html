@@ -1,17 +1,18 @@
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>📓</title><link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><style>* { box-sizing: border-box; margin: 0; padding: 0; }body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Gulim', 'Apple SD Gothic Neo', sans-serif;  color: #111111; min-height: 100vh;}
 /* ══ 잠금 화면 ══ */#lock-screen {  position: fixed; inset: 0; background: #111111; z-index: 9999;  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;}#lock-screen.hidden { display: none; }.lock-icon { font-size: 40px; }.lock-subtitle { font-size: 13px; color: #666666; }.pin-dots { display: flex; gap: 18px; height: 24px; }.pin-dot { width: 15px; height: 15px; border-radius: 50%; background: #3a3a3a; transition: all 0.12s; }.pin-dot.filled { background: #ffffff; transform: scale(1.2); }.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 248px; }.num-btn {  background: #1e1e1e; color: #ffffff; border: 1px solid #2e2e2e; border-radius: 10px;  font-size: 22px; padding: 18px 0; cursor: pointer; user-select: none; font-family: inherit;}.num-btn:active { background: #444444; transform: scale(0.95); }.num-btn.del-btn { font-size: 16px; color: #888888; }.lock-error { font-size: 12px; color: #ff6060; height: 16px; opacity: 0; transition: opacity 0.2s; }.lock-error.show { opacity: 1; }
 /* ══ 메인 레이아웃 ══ */#app { display: none; }#app.visible { display: block; }
-#header {  position: sticky; top: 0; z-index: 100; background: #ffffff;  border-bottom: 2px solid #111111; padding: 15px 20px;  box-shadow: 0 2px 8px rgba(0,0,0,0.07);}#header-top { display: flex; align-items: flex-start; gap: 20px; }#app-title { font-size: 22px; padding-top: 4px; }
-.memo-row { display: flex; gap: 15px; flex: 1; }.memo-wrap { flex: 1; display: flex; flex-direction: column; }.memo-label { font-size: 11px; color: #888888; font-weight: bold; margin-bottom: 5px; }.memo-box {  width: 100%; height: 150px !important; min-height: 150px !important;  background: #fcfcfc; border: 1.5px solid #333333; border-radius: 4px;  padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.6;  resize: none; overflow-y: auto; outline: none;}.memo-box:focus { border-color: #000000; background: #ffffff; }
-/* 🔍 검색창 스타일 */.search-wrap { display: flex; flex-direction: column; min-width: 180px; }.search-box {  width: 100%; padding: 8px 12px; border: 1.5px solid #333333; border-radius: 4px;  font-family: inherit; font-size: 13px; outline: none; background: #fafafa;}.search-box:focus { border-color: #1a5fa8; background: #ffffff; }
+#header {  position: sticky; top: 0; z-index: 100; background: #ffffff;  border-bottom: 2px solid #111111; padding: 15px 20px;  box-shadow: 0 2px 8px rgba(0,0,0,0.07);}
+/* 🛠️ 레이아웃 정렬 보완 */#header-top { display: flex; flex-direction: column; gap: 15px; }#header-main-row { display: flex; align-items: flex-start; gap: 20px; width: 100%; }#app-title { font-size: 22px; padding-top: 4px; }
+.memo-row { display: flex; gap: 15px; flex: 1; }.memo-wrap { flex: 1; display: flex; flex-direction: column; }.memo-label { font-size: 11px; color: #888888; font-weight: bold; margin-bottom: 5px; }.memo-box {  width: 100%; height: 120px !important; min-height: 120px !important;  background: #fcfcfc; border: 1.5px solid #333333; border-radius: 4px;  padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.6;  resize: none; overflow-y: auto; outline: none;}.memo-box:focus { border-color: #000000; background: #ffffff; }
+/* 🔍 무조건 한 줄을 다 차지하도록 수정한 새로운 검색 바 영역 */.search-bar-block {  width: 100%; background: #f8f9fa; border: 1.5px dashed #1a5fa8;  border-radius: 6px; padding: 10px 15px; display: flex; align-items: center; gap: 15px;}.search-title-label {  font-size: 13px; font-weight: bold; color: #1a5fa8; min-width: 70px; white-space: nowrap;}.search-box {  flex: 1; padding: 8px 14px; border: 1.5px solid #333333; border-radius: 4px;  font-family: inherit; font-size: 14px; outline: none; background: #ffffff;}.search-box:focus { border-color: #1a5fa8; box-shadow: 0 0 5px rgba(26,95,168,0.2); }
 .header-btns { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 114px; }
 .hbtn {  border: none; border-radius: 4px; padding: 6px 12px; font-size: 12px;  font-family: inherit; cursor: pointer; text-align: center; font-weight: bold;  letter-spacing: 0.03em; transition: background 0.15s;}.hbtn:active { transform: scale(0.97); }.hbtn.green  { background: #1d7a45; color: #fff; }.hbtn.green:hover  { background: #155c33; }.hbtn.blue   { background: #1a5fa8; color: #fff; }.hbtn.blue:hover   { background: #134880; }.hbtn.gray   { background: #eee; color: #333; border: 1px solid #ccc; }.hbtn.gray:hover   { background: #ddd; }.hbtn.gold   { background: #7a5a1a; color: #fff; }.hbtn.gold:hover   { background: #5c4213; }
 /* ══ 공용 모달 ══ */.modal-overlay {  display: none; position: fixed; inset: 0; z-index: 9000;  background: rgba(0,0,0,0.55); align-items: center; justify-content: center;}.modal-overlay.open { display: flex; }.modal-box {  background: #fff; border-radius: 10px; padding: 28px 26px 22px;  max-width: 360px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.25); text-align: center;}.modal-icon  { font-size: 34px; margin-bottom: 10px; }.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }.modal-desc  { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 14px; }.modal-desc strong { color: #cc2222; }.modal-file-name {  font-size: 12px; color: #333; background: #f4f4f4; border-radius: 4px;  padding: 7px 10px; margin-bottom: 18px; word-break: break-all; text-align: left;}.modal-btns { display: flex; gap: 10px; }.modal-btn {  flex: 1; padding: 10px 0; border-radius: 6px; font-size: 14px;  font-family: inherit; cursor: pointer; font-weight: bold; border: none; transition: opacity 0.15s;}.modal-btn:hover { opacity: 0.85; }.modal-btn.cancel  { background: #eee; color: #444; }.modal-btn.primary { background: #1a5fa8; color: #fff; }.modal-btn.danger  { background: #b72828; color: #fff; }
 /* ══ 비밀번호 변경 모달 전용 ══ */#pw-modal .step { display: none; }#pw-modal .step.active { display: block; }.pw-step-label {  font-size: 12px; color: #888; margin-bottom: 14px;  display: flex; justify-content: center; gap: 8px;}.pw-step-label span { padding: 2px 8px; border-radius: 10px; background: #eee; color: #aaa; font-size: 11px; }.pw-step-label span.on { background: #1a5fa8; color: #fff; }.pw-pin-dots { display: flex; gap: 14px; justify-content: center; margin-bottom: 18px; }.pw-pin-dot { width: 13px; height: 13px; border-radius: 50%; background: #ddd; transition: all 0.12s; }.pw-pin-dot.filled { background: #1a5fa8; transform: scale(1.2); }.pw-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }.pw-num-btn {  background: #f4f4f4; color: #111; border: 1px solid #ddd; border-radius: 8px;  font-size: 20px; padding: 14px 0; cursor: pointer; user-select: none; font-family: inherit;}.pw-num-btn:active { background: #ddd; transform: scale(0.95); }.pw-num-btn.del { font-size: 14px; color: #888; }.pw-error { font-size: 12px; color: #cc2222; height: 16px; opacity: 0; transition: opacity 0.2s; margin-bottom: 6px; }.pw-error.show { opacity: 1; }
-/* ══ 테이블 ══ */#table-wrap { overflow: auto; max-height: calc(100vh - 260px); }table { border-collapse: collapse; width: max-content; min-width: 100%; border: 2px solid #111111; }thead th {  position: sticky; top: 0; z-index: 50; background: #f0f0f0;  border-bottom: 2px solid #111111; border-right: 1px solid #aaa; padding: 12px; font-size: 15px;}thead th:first-child { position: sticky; left: 0; z-index: 60; background: #e8e8e8; border-right: 2px solid #111111; }td.date-cell {  position: sticky; left: 0; z-index: 10; background: #f4f4f4;  border-right: 2px solid #111111; border-bottom: 1px solid #ddd;  text-align: center; padding: 10px; width: 80px;}.date-label { font-size: 13px; font-weight: 700; display: block; }.sun .date-label { color: #cc2222; }.sat .date-label { color: #1a55bb; }td.entry-cell {  border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;  vertical-align: top; width: 220px; cursor: text;}.cell-text { display: block; padding: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; min-height: 60px; }.cell-textarea { width: 100%; display: block; border: 2px solid #111111; padding: 10px; font-size: 14px; line-height: 1.6; resize: none; overflow: hidden; }.month-divider { background: #e0e0e0; cursor: pointer; }.month-divider td { padding: 10px; font-weight: 700; border-bottom: 2px solid #111111; }.collapsed-row { display: none; }
+/* ══ 테이블 ══ */#table-wrap { overflow: auto; max-height: calc(100vh - 280px); }table { border-collapse: collapse; width: max-content; min-width: 100%; border: 2px solid #111111; }thead th {  position: sticky; top: 0; z-index: 50; background: #f0f0f0;  border-bottom: 2px solid #111111; border-right: 1px solid #aaa; padding: 12px; font-size: 15px;}thead th:first-child { position: sticky; left: 0; z-index: 60; background: #e8e8e8; border-right: 2px solid #111111; }td.date-cell {  position: sticky; left: 0; z-index: 10; background: #f4f4f4;  border-right: 2px solid #111111; border-bottom: 1px solid #ddd;  text-align: center; padding: 10px; width: 80px;}.date-label { font-size: 13px; font-weight: 700; display: block; }.sun .date-label { color: #cc2222; }.sat .date-label { color: #1a55bb; }td.entry-cell {  border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;  vertical-align: top; width: 220px; cursor: text;}.cell-text { display: block; padding: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; min-height: 60px; }.cell-textarea { width: 100%; display: block; border: 2px solid #111111; padding: 10px; font-size: 14px; line-height: 1.6; resize: none; overflow: hidden; }.month-divider { background: #e0e0e0; cursor: pointer; }.month-divider td { padding: 10px; font-weight: 700; border-bottom: 2px solid #111111; }.collapsed-row { display: none; }
 #toast {  position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff;  padding: 10px 20px; border-radius: 30px; opacity: 0; transition: 0.3s;  pointer-events: none; z-index: 300; font-size: 14px;}#toast.show { opacity: 1; }</style></head><body>
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
-<div id="app">  <div id="header">    <div id="header-top">      <div id="app-title">📓</div>      <div class="memo-row">        <div class="memo-wrap">          <div class="memo-label">메모 1</div>          <textarea class="memo-box" id="memo1" placeholder="메모 1..."></textarea>        </div>        <div class="memo-wrap">          <div class="memo-label">메모 2</div>          <textarea class="memo-box" id="memo2" placeholder="메모 2..."></textarea>        </div>      </div>      <div class="search-wrap">        <div class="memo-label">🔍 일기 검색</div>        <input type="text" id="search-input" class="search-box" placeholder="검색어를 입력하세요...">      </div>      <div class="header-btns">        <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>        <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>        <button class="hbtn gold"   id="btn-open-pw">🔑 비밀번호 변경</button>        <button class="hbtn gray"   onclick="location.reload()">🔒 잠금</button>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
+<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <textarea class="memo-box" id="memo1" placeholder="메모 1..."></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <textarea class="memo-box" id="memo2" placeholder="메모 2..."></textarea>          </div>        </div>        <div class="header-btns">          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 비밀번호 변경</button>          <button class="hbtn gray"   onclick="location.reload()">🔒 잠금</button>        </div>      </div>      <!-- 🔍 파란 점선으로 감싸 무조건 고정 노출되는 대형 검색바 블록 -->      <div class="search-bar-block">        <div class="search-title-label">🔍 일기 검색</div>        <input type="text" id="search-input" class="search-box" placeholder="찾고 싶은 단어나 키워드를 입력해 보세요...">      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
 <div id="confirm-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">⚠️</div>    <div class="modal-title">기존 데이터를 덮어쓸까요?</div>    <div class="modal-desc">엑셀 파일을 불러오면 <strong>현재 저장된 모든 내용이<br>파일 내용으로 교체</strong>됩니다.</div>    <div class="modal-file-name" id="modal-file-name"></div>    <div class="modal-btns">      <button class="modal-btn cancel"  id="btn-import-cancel">취소</button>      <button class="modal-btn primary" id="btn-import-confirm">불러오기</button>    </div>  </div></div>
 <div id="pw-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">🔑</div>    <div class="modal-title">비밀번호 변경</div>
     <div class="pw-step-label">      <span id="pws-1" class="on">① 현재</span>      <span id="pws-2">② 새 비밀번호</span>      <span id="pws-3">③ 확인</span>    </div>
@@ -57,7 +58,6 @@ function syncWithFirebase() {
   onValue(ref(db, 'diary_data'), (snapshot) => {
     entries = snapshot.exists() ? snapshot.val() : {};
     buildTable(); 
-    // 데이터 불러온 후 검색창에 검색어가 이미 적혀있다면 검색 필터 즉시 적용
     filterSearch();
   });
 
@@ -88,7 +88,7 @@ function buildTable() {
   MONTHS.forEach(m => {
     const monthRow = document.createElement('tr');
     monthRow.className = 'month-divider';
-    monthRow.setAttribute('data-month', m); // 검색용 달 구분 태그
+    monthRow.setAttribute('data-month', m);
     monthRow.innerHTML = `<td colspan="${YEARS.length + 1}">${m}월</td>`;
     monthRow.onclick = () => toggleMonth(m);
     tbody.appendChild(monthRow);
@@ -99,7 +99,6 @@ function buildTable() {
 
       const tr = document.createElement('tr');
       tr.className = `day-row month-${m}`;
-      // 처음 로딩 시 이번 달만 펼치기 규칙 유지
       if (m !== new Date().getMonth() + 1) tr.classList.add('collapsed-row');
       
       let rowHtml = `<td class="date-cell"><span class="date-label">${m}/${d}</span></td>`;
@@ -117,13 +116,11 @@ function buildTable() {
   });
 }
 
-/* 🔍 실시간 검색 필터링 엔진 함수 추가 */
 function filterSearch() {
   const query = document.getElementById('search-input').value.trim().toLowerCase();
   const dayRows = document.querySelectorAll('.day-row');
   const monthDividers = document.querySelectorAll('.month-divider');
 
-  // 검색어가 비어 있으면 기본 펼침/접힘 상태로 초기화
   if (!query) {
     monthDividers.forEach(div => div.style.display = '');
     dayRows.forEach(row => {
@@ -138,7 +135,6 @@ function filterSearch() {
     return;
   }
 
-  // 검색어가 있는 경우 매칭 연산 실행
   const activeMonths = new Set();
 
   dayRows.forEach(row => {
@@ -153,15 +149,14 @@ function filterSearch() {
 
     if (hasMatch) {
       row.style.display = '';
-      row.classList.remove('collapsed-row'); // 검색 결과는 무조건 펼쳐서 보여줌
+      row.classList.remove('collapsed-row');
       const m = row.className.match(/month-(\d+)/)[1];
-      activeMonths.add(m); // 매칭된 행이 속한 월 기록
+      activeMonths.add(m);
     } else {
       row.style.display = 'none';
     }
   });
 
-  // 검색 결과가 존재하는 월 구분선만 노출, 나머지는 숨김
   monthDividers.forEach(div => {
     const m = div.getAttribute('data-month');
     if (activeMonths.has(m)) {
@@ -172,12 +167,10 @@ function filterSearch() {
   });
 }
 
-// 검색창에 글자를 타이핑할 때마다 실시간으로 작동하도록 연결
 document.getElementById('search-input').oninput = filterSearch;
 
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toggleMonth(m) { 
-  // 검색 중일 때는 월 클릭을 통한 개별 토글을 막아 꼬임을 방지
   if(document.getElementById('search-input').value.trim()) return;
   document.querySelectorAll(`.month-${m}`).forEach(r => r.classList.toggle('collapsed-row')); 
 }
@@ -214,7 +207,6 @@ function closeCell(td, val) {
   const ta = td.querySelector('textarea');
   if (ta) ta.remove();
   activeCell = null;
-  // 셀이 닫힐 때 현재 검색 결과 상태 유지 및 동기화
   filterSearch();
 }
 
@@ -226,7 +218,7 @@ function showToast(msg) {
 }
 
 function focusToday() {
-  if(document.getElementById('search-input').value.trim()) return; // 검색 중엔 자동 스크롤 스킵
+  if(document.getElementById('search-input').value.trim()) return;
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth() + 1;
