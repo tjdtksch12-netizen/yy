@@ -10,18 +10,17 @@
 /* ══ 테이블 ══ */#table-wrap { overflow: auto; max-height: calc(100vh - 260px); }table { border-collapse: collapse; width: max-content; min-width: 100%; border: 2px solid #111111; }thead th {  position: sticky; top: 0; z-index: 50; background: #f0f0f0;  border-bottom: 2px solid #111111; border-right: 1px solid #aaa; padding: 12px; font-size: 15px;}thead th:first-child { position: sticky; left: 0; z-index: 60; background: #e8e8e8; border-right: 2px solid #111111; }td.date-cell {  position: sticky; left: 0; z-index: 10; background: #f4f4f4;  border-right: 2px solid #111111; border-bottom: 1px solid #ddd;  text-align: center; padding: 10px; width: 80px;}.date-label { font-size: 13px; font-weight: 700; display: block; }.sun .date-label { color: #cc2222; }.sat .date-label { color: #1a55bb; }td.entry-cell {  border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;  vertical-align: top; width: 220px; cursor: text;}.cell-text { display: block; padding: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; min-height: 60px; }.cell-textarea { width: 100%; display: block; border: 2px solid #111111; padding: 10px; font-size: 14px; line-height: 1.6; resize: none; overflow: hidden; }.month-divider { background: #e0e0e0; cursor: pointer; }.month-divider td { padding: 10px; font-weight: 700; border-bottom: 2px solid #111111; }.collapsed-row { display: none; }
 #toast {  position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff;  padding: 10px 20px; border-radius: 30px; opacity: 0; transition: 0.3s;  pointer-events: none; z-index: 300; font-size: 14px;}#toast.show { opacity: 1; }</style></head><body>
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
-<div id="app">  <div id="header">    <div id="header-top">      <div id="app-title">📓</div>      <div class="memo-row">        <div class="memo-wrap">          <div class="memo-label">메모 1</div>          <textarea class="memo-box" id="memo1" placeholder="메모 1..."></textarea>        </div>        <div class="memo-wrap">          <div class="memo-label">메모 2</div>          <textarea class="memo-box" id="memo2" placeholder="메모 2..."></textarea>        </div>      </div>      <div class="header-btns">        <button class="hbtn green"  onclick="exportToExcel()">📥 엑셀 저장</button>        <button class="hbtn blue"   onclick="document.getElementById('excel-file-input').click()">📤 엑셀 불러오기</button>        <button class="hbtn gold"   onclick="openPwModal()">🔑 비밀번호 변경</button>        <button class="hbtn gray"   onclick="location.reload()">🔒 잠금</button>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none" onchange="onFileSelected(event)">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
-<div id="confirm-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">⚠️</div>    <div class="modal-title">기존 데이터를 덮어쓸까요?</div>    <div class="modal-desc">엑셀 파일을 불러오면 <strong>현재 저장된 모든 내용이<br>파일 내용으로 교체</strong>됩니다.</div>    <div class="modal-file-name" id="modal-file-name"></div>    <div class="modal-btns">      <button class="modal-btn cancel"  onclick="cancelImport()">취소</button>      <button class="modal-btn primary" onclick="confirmImport()">불러오기</button>    </div>  </div></div>
+<div id="app">  <div id="header">    <div id="header-top">      <div id="app-title">📓</div>      <div class="memo-row">        <div class="memo-wrap">          <div class="memo-label">메모 1</div>          <textarea class="memo-box" id="memo1" placeholder="메모 1..."></textarea>        </div>        <div class="memo-wrap">          <div class="memo-label">메모 2</div>          <textarea class="memo-box" id="memo2" placeholder="메모 2..."></textarea>        </div>      </div>      <div class="header-btns">        <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>        <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>        <button class="hbtn gold"   id="btn-open-pw">🔑 비밀번호 변경</button>        <button class="hbtn gray"   onclick="location.reload()">🔒 잠금</button>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
+<div id="confirm-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">⚠️</div>    <div class="modal-title">기존 데이터를 덮어쓸까요?</div>    <div class="modal-desc">엑셀 파일을 불러오면 <strong>현재 저장된 모든 내용이<br>파일 내용으로 교체</strong>됩니다.</div>    <div class="modal-file-name" id="modal-file-name"></div>    <div class="modal-btns">      <button class="modal-btn cancel"  id="btn-import-cancel">취소</button>      <button class="modal-btn primary" id="btn-import-confirm">불러오기</button>    </div>  </div></div>
 <div id="pw-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">🔑</div>    <div class="modal-title">비밀번호 변경</div>
     <div class="pw-step-label">      <span id="pws-1" class="on">① 현재</span>      <span id="pws-2">② 새 비밀번호</span>      <span id="pws-3">③ 확인</span>    </div>
     <div class="step active" id="pw-step-1">      <div class="modal-desc" style="margin-bottom:12px;">현재 비밀번호를 입력하세요</div>      <div class="pw-pin-dots" id="pw-dots-1">        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>      </div>      <div class="pw-error" id="pw-err-1">현재 비밀번호가 틀렸습니다</div>    </div>
     <div class="step" id="pw-step-2">      <div class="modal-desc" style="margin-bottom:12px;">새 비밀번호 4자리를 입력하세요</div>      <div class="pw-pin-dots" id="pw-dots-2">        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>      </div>      <div class="pw-error" id="pw-err-2"></div>    </div>
     <div class="step" id="pw-step-3">      <div class="modal-desc" style="margin-bottom:12px;">새 비밀번호를 한 번 더 입력하세요</div>      <div class="pw-pin-dots" id="pw-dots-3">        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>      </div>      <div class="pw-error" id="pw-err-3">비밀번호가 일치하지 않습니다</div>    </div>
-    <div class="pw-numpad" id="pw-numpad">      <button class="pw-num-btn" data-n="1">1</button><button class="pw-num-btn" data-n="2">2</button><button class="pw-num-btn" data-n="3">3</button>      <button class="pw-num-btn" data-n="4">4</button><button class="pw-num-btn" data-n="5">5</button><button class="pw-num-btn" data-n="6">6</button>      <button class="pw-num-btn" data-n="7">7</button><button class="pw-num-btn" data-n="8">8</button><button class="pw-num-btn" data-n="9">9</button>      <button class="pw-num-btn" style="visibility:hidden"></button>      <button class="pw-num-btn" data-n="0">0</button>      <button class="pw-num-btn del">⌫</button>    </div>    <div class="modal-btns">      <button class="modal-btn cancel" onclick="closePwModal()">취소</button>    </div>  </div></div>
+    <div class="pw-numpad" id="pw-numpad">      <button class="pw-num-btn" data-n="1">1</button><button class="pw-num-btn" data-n="2">2</button><button class="pw-num-btn" data-n="3">3</button>      <button class="pw-num-btn" data-n="4">4</button><button class="pw-num-btn" data-n="5">5</button><button class="pw-num-btn" data-n="6">6</button>      <button class="pw-num-btn" data-n="7">7</button><button class="pw-num-btn" data-n="8">8</button><button class="pw-num-btn" data-n="9">9</button>      <button class="pw-num-btn" style="visibility:hidden"></button>      <button class="pw-num-btn" data-n="0">0</button>      <button class="pw-num-btn del">⌫</button>    </div>    <div class="modal-btns">      <button class="modal-btn cancel" id="btn-close-pw">취소</button>    </div>  </div></div>
 <div id="toast">저장되었습니다 ✓</div>
 
 <script type="module">
-/* ══ FIREBASE 설정 자동 바인딩 완료 ══ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -49,16 +48,15 @@ let activeCell = null;
 let pinInput = '';
 let pendingImportData = null;
 
+// 글로벌 노출용 이벤트 연결
+window.exportToExcel = exportToExcel;
+window.openPwModal = openPwModal;
+window.closePwModal = closePwModal;
+
 function syncWithFirebase() {
-  const diaryRef = ref(db, 'diary_data');
-  onValue(diaryRef, (snapshot) => {
-    if (snapshot.exists()) {
-      entries = snapshot.val();
-      buildTable(); 
-    } else {
-      entries = {};
-      buildTable();
-    }
+  onValue(ref(db, 'diary_data'), (snapshot) => {
+    entries = snapshot.exists() ? snapshot.val() : {};
+    buildTable(); 
   });
 
   get(child(ref(db), 'memos')).then((snapshot) => {
@@ -71,16 +69,13 @@ function syncWithFirebase() {
 }
 
 document.querySelectorAll('.memo-box').forEach(m => {
-  m.oninput = () => {
-    set(ref(db, `memos/${m.id}`), m.value);
-  };
+  m.oninput = () => set(ref(db, `memos/${m.id}`), m.value);
 });
 
 function buildTable() {
+  if (activeCell) return;
   const thead = document.getElementById('table-head');
   const tbody = document.getElementById('table-body');
-  
-  if (activeCell) return; 
   tbody.innerHTML = '';
 
   let headHtml = '<tr><th style="left:0;z-index:60;">날짜</th>';
@@ -95,11 +90,9 @@ function buildTable() {
     monthRow.onclick = () => toggleMonth(m);
     tbody.appendChild(monthRow);
 
-    const lastDay = 29; 
-    for (let d = 1; d <= lastDay; d++) {
+    for (let d = 1; d <= 31; d++) {
       if (m === 2 && d > 29) continue;
       if ([4, 6, 9, 11].includes(m) && d > 30) continue;
-      if ([1, 3, 5, 7, 8, 10, 12].includes(m) && d > 31) continue;
 
       const tr = document.createElement('tr');
       tr.className = `day-row month-${m}`;
@@ -108,11 +101,15 @@ function buildTable() {
       let rowHtml = `<td class="date-cell"><span class="date-label">${m}/${d}</span></td>`;
       YEARS.forEach(y => {
         const key = `${y}-${m}-${d}`;
-        rowHtml += `<td class="entry-cell" data-key="${key}" onclick="openCell(this)"><span class="cell-text">${escHtml(entries[key]||'')}</span></td>`;
+        rowHtml += `<td class="entry-cell" data-key="${key}"><span class="cell-text">${escHtml(entries[key]||'')}</span></td>`;
       });
       tr.innerHTML = rowHtml;
       tbody.appendChild(tr);
     }
+  });
+
+  document.querySelectorAll('.entry-cell').forEach(td => {
+    td.onclick = () => openCell(td);
   });
 }
 
@@ -144,15 +141,13 @@ function closeCell(td, val) {
   const key = td.dataset.key;
   if (val !== undefined && val !== entries[key]) {
     entries[key] = val;
-    set(ref(db, 'diary_data/' + key), val)
-      .then(() => showToast('서버에 저장되었습니다 ✓'));
+    set(ref(db, 'diary_data/' + key), val).then(() => showToast('서버에 저장되었습니다 ✓'));
   }
   td.querySelector('.cell-text').textContent = entries[key] || '';
   td.querySelector('.cell-text').style.display = 'block';
   const ta = td.querySelector('textarea');
   if (ta) ta.remove();
   activeCell = null;
-  buildTable();
 }
 
 function showToast(msg) {
@@ -175,9 +170,7 @@ function focusToday() {
       toggleMonth(m);
     }
     openCell(targetTd);
-    setTimeout(() => {
-      targetTd.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
+    setTimeout(() => targetTd.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
   }
 }
 
@@ -194,13 +187,11 @@ function exportToExcel() {
       sheetData.push(row);
     }
   });
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
-  XLSX.utils.book_append_sheet(wb, ws, '다이어리');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '다이어리');
   
   const memo1 = document.getElementById('memo1').value;
   const memo2 = document.getElementById('memo2').value;
-  const mws = XLSX.utils.aoa_to_sheet([['메모 1','메모 2'],[memo1,memo2]]);
-  XLSX.utils.book_append_sheet(wb, mws, '메모');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['메모 1','메모 2'],[memo1,memo2]]), '메모');
   
   const today = new Date();
   const ds = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
@@ -208,7 +199,9 @@ function exportToExcel() {
   showToast('엑셀로 저장되었습니다 📥');
 }
 
-function onFileSelected(e) {
+document.getElementById('btn-export').onclick = exportToExcel;
+document.getElementById('btn-import-trigger').onclick = () => document.getElementById('excel-file-input').click();
+document.getElementById('excel-file-input').onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
   e.target.value = '';
@@ -251,20 +244,24 @@ function onFileSelected(e) {
     }
   };
   reader.readAsArrayBuffer(file);
-}
-function cancelImport() { pendingImportData=null; document.getElementById('confirm-modal').classList.remove('open'); }
-function confirmImport() {
+};
+
+document.getElementById('btn-import-cancel').onclick = () => { pendingImportData=null; document.getElementById('confirm-modal').classList.remove('open'); };
+document.getElementById('btn-import-confirm').onclick = () => {
   if (!pendingImportData) return;
   document.getElementById('confirm-modal').classList.remove('open');
   set(ref(db, 'diary_data'), pendingImportData.entries);
   set(ref(db, 'memos'), {memo1: pendingImportData.memo1, memo2: pendingImportData.memo2});
   pendingImportData=null;
   showToast('엑셀 불러오기 완료 ✅');
-}
+};
 
 let pwStep = 1; let pwInputs = { 1:'', 2:'', 3:'' }; let newPw = '';
 function openPwModal() { pwStep=1; pwInputs={1:'',2:'',3:''}; renderPwStep(); document.getElementById('pw-modal').classList.add('open'); }
 function closePwModal() { document.getElementById('pw-modal').classList.remove('open'); }
+document.getElementById('btn-open-pw').onclick = openPwModal;
+document.getElementById('btn-close-pw').onclick = closePwModal;
+
 function renderPwStep() {
   [1,2,3].forEach(i => document.getElementById(`pws-${i}`).classList.toggle('on', i===pwStep));
   document.querySelectorAll('#pw-modal .step').forEach((el,i) => el.classList.toggle('active', i+1===pwStep));
