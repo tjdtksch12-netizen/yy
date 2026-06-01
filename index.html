@@ -48,7 +48,6 @@ let activeCell = null;
 let pinInput = '';
 let pendingImportData = null;
 
-// 글로벌 노출용 이벤트 연결
 window.exportToExcel = exportToExcel;
 window.openPwModal = openPwModal;
 window.closePwModal = closePwModal;
@@ -212,32 +211,53 @@ document.getElementById('excel-file-input').onchange = (e) => {
       const sheetName = wb.SheetNames.find(n => n.includes('다이어리')) || wb.SheetNames[0];
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:''});
       if (rows.length < 2) throw new Error('데이터 행이 없습니다.');
+      
       const yearColMap = {};
       rows[0].forEach((cell,i) => { const m=String(cell).match(/(\d{4})/); if(m) yearColMap[parseInt(m[1])]=i; });
+      
       const newEntries = {};
+      let validCount = 0; // 제대로 읽어온 행 개수 체크용
+
       rows.slice(1).forEach(row => {
-        const ds = String(row[0]||'').trim();
-        let month, day;
-        const m1 = ds.match(/^(\d+)월\s*(\d+)일$/);
+        // 🌟 [핵심 변경점] 날짜 텍스트에서 모든 공백(띄어쓰기)을 완벽하게 제거하여 정렬
+        let ds = String(row[0]||'').replace(/\s+/g, ''); 
+        if(!ds) return;
+
+        let month = null, day = null;
+        
+        // 공백이 제거되었으므로 "1월1일" 또는 "1/1" 패턴만 정밀 매칭
+        const m1 = ds.match(/^(\d+)월(\d+)일$/);
         const m2 = ds.match(/^(\d+)\/(\d+)$/);
-        if (m1)      { month=parseInt(m1[1]); day=parseInt(m1[2]); }
+        
+        if (m1) { month=parseInt(m1[1]); day=parseInt(m1[2]); }
         else if (m2) { month=parseInt(m2[1]); day=parseInt(m2[2]); }
-        else return;
+        else return; // 형식 불일치 시 패스
+
         YEARS.forEach(y => {
           const ci = yearColMap[y];
           if (ci===undefined) return;
           const val = String(row[ci]||'').trim();
-          if (val) newEntries[`${y}-${month}-${day}`] = val;
+          if (val) {
+            newEntries[`${y}-${month}-${day}`] = val;
+            validCount++;
+          }
         });
       });
+
       let newMemo1='', newMemo2='';
       const msn = wb.SheetNames.find(n => n.includes('메모'));
       if (msn) {
         const mr = XLSX.utils.sheet_to_json(wb.Sheets[msn], {header:1, defval:''});
         if (mr.length>=2) { newMemo1=String(mr[1][0]||''); newMemo2=String(mr[1][1]||''); }
       }
+
+      if (validCount === 0) {
+        alert("⚠️ 엑셀 데이터 파일 분석 실패!\n날짜 형식이 올바르지 않거나 빈 파일입니다.");
+        return;
+      }
+
       pendingImportData = {entries:newEntries, memo1:newMemo1, memo2:newMemo2};
-      document.getElementById('modal-file-name').textContent = '📄 ' + file.name;
+      document.getElementById('modal-file-name').textContent = `📄 ${file.name} (유효 데이터: ${validCount}건)`;
       document.getElementById('confirm-modal').classList.add('open');
     } catch(err) {
       alert('파일을 읽는 중 오류가 발생했습니다.\n\n' + err.message);
@@ -250,10 +270,20 @@ document.getElementById('btn-import-cancel').onclick = () => { pendingImportData
 document.getElementById('btn-import-confirm').onclick = () => {
   if (!pendingImportData) return;
   document.getElementById('confirm-modal').classList.remove('open');
-  set(ref(db, 'diary_data'), pendingImportData.entries);
-  set(ref(db, 'memos'), {memo1: pendingImportData.memo1, memo2: pendingImportData.memo2});
-  pendingImportData=null;
-  showToast('엑셀 불러오기 완료 ✅');
+  
+  // Firebase 서버에 완벽 덮어쓰기 및 진행 알림
+  set(ref(db, 'diary_data'), pendingImportData.entries)
+    .then(() => {
+      return set(ref(db, 'memos'), {memo1: pendingImportData.memo1, memo2: pendingImportData.memo2});
+    })
+    .then(() => {
+      alert("🎉 서버 동기화 성공!\n엑셀 데이터가 정상적으로 저장되었습니다.");
+      pendingImportData=null;
+      showToast('엑셀 불러오기 완료 ✅');
+    })
+    .catch((err) => {
+      alert("❌ 서버 저장 중 에러 발생: " + err.message);
+    });
 };
 
 let pwStep = 1; let pwInputs = { 1:'', 2:'', 3:'' }; let newPw = '';
