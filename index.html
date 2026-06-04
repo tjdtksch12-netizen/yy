@@ -5,7 +5,8 @@
 #header-top { display: flex; flex-direction: column; gap: 12px; }#header-main-row { display: flex; align-items: flex-start; gap: 20px; width: 100%; }#app-title { font-size: 22px; padding-top: 4px; }
 .memo-row { display: flex; gap: 15px; flex: 1; align-self: stretch; }.memo-wrap { flex: 1; display: flex; flex-direction: column; }.memo-label { font-size: 11px; color: #888888; font-weight: bold; margin-bottom: 5px; }
 
-/* 📝 메모 상자 스타일 및 검색 하이라이트 효과 */.memo-box {  width: 100%; height: 244px !important; min-height: 244px !important;  background: #fcfcfc; border: 1.5px solid #333333; border-radius: 4px;  padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.6;  resize: none; overflow-y: auto; outline: none; scroll-behavior: smooth; transition: height 0.2s ease, background-color 0.2s, border-color 0.2s;}.memo-box:focus {   border-color: #1a5fa8;   background: #ffffff;   height: 350px !important;}.memo-box.memo-match {  background-color: #fffde7 !important;  border: 2px solid #ffb300 !important;  box-shadow: 0 0 10px rgba(255, 179, 0, 0.3);}
+/* 📝 메모 상자 스타일 및 애니메이션 (일기 칸과 동일한 방식으로 변경) */.memo-box {  width: 100%; height: 244px !important; min-height: 244px !important;  background: #fcfcfc; border: 1.5px solid #333333; border-radius: 4px;  padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.6;  resize: none; overflow-y: auto; outline: none; transition: height 0.2s ease, background-color 0.2s, border-color 0.2s;  white-space: pre-wrap; word-break: break-all; position: relative;}/* 보기 모드 (평상시 & 검색 시) */.memo-disp { cursor: text; }/* 입력 모드 (클릭했을 때) */.memo-edit:focus {   border-color: #1a5fa8;   background: #ffffff;   height: 350px !important;}
+/* ✨ 메모와 일기 공통: 검색 형광펜 스타일 */mark {  background-color: #ffeb3b;  color: #000000;  font-weight: bold;  padding: 1px 3px;  border-radius: 2px;}
 
 /* 🔍 버튼 목록 스타일 */.header-btns { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 130px; }
 .hbtn {  border: none; border-radius: 4px; padding: 8px 12px; font-size: 12px;  font-family: inherit; cursor: pointer; text-align: center; font-weight: bold;  letter-spacing: 0.03em; transition: background 0.15s;}.hbtn:active { transform: scale(0.97); }.hbtn.green  { background: #1d7a45; color: #fff; }.hbtn.green:hover  { background: #155c33; }.hbtn.blue   { background: #1a5fa8; color: #fff; }.hbtn.blue:hover   { background: #134880; }.hbtn.gray   { background: #eee; color: #333; border: 1px solid #ccc; }.hbtn.gray:hover   { background: #ddd; }.hbtn.gold   { background: #7a5a1a; color: #fff; }.hbtn.gold:hover   { background: #5c4213; }.hbtn.purple { background: #563d7c; color: #fff; }.hbtn.purple:hover { background: #402d5e; }
@@ -19,7 +20,7 @@
 /* ✨✨ 연도 폴딩(접기) 관련 핵심 스타일 ✨✨ */th.year-col { cursor: pointer; transition: all 0.2s ease; }th.year-col:hover { background: #dcdcdc; }.year-title-text { transition: all 0.2s ease; display: block; }
 /* 접혔을 때의 헤더(th) 모양 */th.collapsed-year {  width: 36px !important; min-width: 36px !important; max-width: 36px !important;  padding: 0 !important; background: #ebebeb;}th.collapsed-year:hover { background: #dfdfdf; }th.collapsed-year .year-title-text {  writing-mode: vertical-rl;  text-orientation: upright;  padding: 10px 0;  font-size: 13px;  letter-spacing: 2px;  margin: 0 auto;  color: #888;}
 /* 접혔을 때의 데이터 칸(td) 모양 */td.entry-cell {  border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;  vertical-align: top; width: 220px; cursor: text; transition: all 0.2s ease;}td.entry-cell.collapsed-year {  width: 36px !important; min-width: 36px !important; max-width: 36px !important;  padding: 0 !important; background: #f8f8f8; cursor: pointer; border-right: 1px dashed #ccc;}td.entry-cell.collapsed-year:hover { background: #eeeeee; }td.entry-cell.collapsed-year > * { display: none !important; }
-.cell-text { display: block; padding: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; min-height: 60px; }.cell-text mark {  background-color: #ffeb3b;  color: #000000;  font-weight: bold;  padding: 1px 3px;  border-radius: 2px;}.cell-textarea { width: 100%; display: block; border: 2px solid #111111; padding: 10px; font-size: 14px; line-height: 1.6; resize: none; overflow: hidden; }.month-divider { background: #e0e0e0; cursor: pointer; }.month-divider td { padding: 10px; font-weight: 700; border-bottom: 2px solid #111111; }.collapsed-row { display: none; }
+.cell-text { display: block; padding: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; min-height: 60px; }.cell-textarea { width: 100%; display: block; border: 2px solid #111111; padding: 10px; font-size: 14px; line-height: 1.6; resize: none; overflow: hidden; }.month-divider { background: #e0e0e0; cursor: pointer; }.month-divider td { padding: 10px; font-weight: 700; border-bottom: 2px solid #111111; }.collapsed-row { display: none; }
 #toast {  position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff;  padding: 10px 20px; border-radius: 30px; opacity: 0; transition: 0.3s;  pointer-events: none; z-index: 300; font-size: 14px;}#toast.show { opacity: 1; }
 /* ══ 모바일 전용 반응형 및 숨김 스타일 ══ */@media (max-width: 768px) {  #header.hide-header {    transform: translateY(-100%);    opacity: 0;    pointer-events: none;    position: fixed;    width: 100%;  }  #header { padding: 10px; }  #header-main-row { flex-direction: column; gap: 10px; }  #app-title { display: none; }  .memo-row { width: 100%; flex-direction: column; gap: 8px; }  .memo-box { height: 120px !important; min-height: 120px !important; }  .memo-box:focus { height: 360px !important; }  .header-btns {     width: 100%;     display: grid;     grid-template-columns: repeat(2, 1fr);     gap: 6px;     min-width: unset;  }  .hbtn { padding: 10px 5px; font-size: 11px; }  #btn-toggle-years { grid-column: span 2; padding: 10px; }  .side-search-block { grid-column: span 2; width: 100%; padding: 8px; }  #table-wrap { max-height: calc(100vh - 350px); }  #table-wrap.fullscreen-table { max-height: 100vh !important; }  td.entry-cell { width: 160px; }  .cell-text { padding: 8px; font-size: 13px; min-height: 50px; }  .cell-textarea { padding: 6px; font-size: 13px; }  .day-row.expanded-row td { height: 320px !important; }  td.entry-cell.collapsed-year { width: 36px !important; min-width: 36px !important; }}</style></head><body>
 
@@ -60,7 +61,7 @@
 </script>
 
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
-<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <textarea class="memo-box" id="memo1" placeholder="메모 1..."></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <textarea class="memo-box" id="memo2" placeholder="메모 2..."></textarea>          </div>        </div>        <div class="header-btns">          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn gray"   onclick="location.reload()">🔒 앱 잠금</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력...">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
+<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn gray"   onclick="location.reload()">🔒 앱 잠금</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력...">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
 <div id="confirm-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">⚠️</div>    <div class="modal-title">기존 데이터를 덮어쓸까요?</div>    <div class="modal-desc">엑셀 파일을 불러오면 <strong>현재 저장된 모든 내용이<br>파일 내용으로 교체</strong>됩니다.</div>    <div class="modal-file-name" id="modal-file-name"></div>    <div class="modal-btns">      <button class="modal-btn cancel"  id="btn-import-cancel">취소</button>      <button class="modal-btn primary" id="btn-import-confirm">불러오기</button>    </div>  </div></div>
 <div id="pw-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">🔑</div>    <div class="modal-title">비밀번호 변경</div>
     <div class="pw-step-label">      <span id="pws-1" class="on">① 현재</span>      <span id="pws-2">② 새 비밀번호</span>      <span id="pws-3">③ 확인</span>    </div>
@@ -94,6 +95,8 @@ const DAYS = ['일','월','화','수','목','금','토'];
 const PW_KEY = 'diary_pw';
 
 let entries = {};
+// ✨ 메모 데이터를 분리해서 관리
+let memoData = { 1: '', 2: '' };
 let activeCell = null;
 let pendingImportData = null;
 
@@ -115,18 +118,40 @@ function syncWithFirebase() {
   get(child(ref(db), 'memos')).then((snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
-      document.getElementById('memo1').value = data.memo1 || '';
-      document.getElementById('memo2').value = data.memo2 || '';
-      filterSearch(); 
+      memoData[1] = data.memo1 || '';
+      memoData[2] = data.memo2 || '';
+      filterSearch(); // 데이터 로드 후 화면에 반영
     }
   });
 }
 
-document.querySelectorAll('.memo-box').forEach(m => {
-  m.oninput = () => {
-    set(ref(db, `memos/${m.id}`), m.value);
-    filterSearch(); 
+// ✨ 메모장 열기 (클릭 시 입력 모드로 전환)
+window.openMemo = function(num) {
+  const disp = document.getElementById(`memo-disp-${num}`);
+  const edit = document.getElementById(`memo-edit-${num}`);
+  disp.style.display = 'none';
+  edit.style.display = 'block';
+  edit.value = memoData[num];
+  edit.focus();
+};
+
+// ✨ 메모장 닫기 (입력 완료 시 자동 저장 및 보기 모드로 전환)
+window.closeMemo = function(num) {
+  const disp = document.getElementById(`memo-disp-${num}`);
+  const edit = document.getElementById(`memo-edit-${num}`);
+  edit.style.display = 'none';
+  disp.style.display = 'block';
+  filterSearch(); // 내용 반영 및 하이라이트 재적용
+};
+
+// 메모장 입력 시 자동 동기화 (기존과 동일하게 타이핑 즉시 저장)
+[1, 2].forEach(num => {
+  const edit = document.getElementById(`memo-edit-${num}`);
+  edit.oninput = (e) => {
+    memoData[num] = e.target.value;
+    set(ref(db, `memos/memo${num}`), e.target.value);
   };
+  edit.onblur = () => closeMemo(num);
 });
 
 function buildTable() {
@@ -223,34 +248,31 @@ window.toggleRowExpand = function(rowEl, event) {
   }
 }
 
-// ✨ 단어가 위치한 곳으로 메모장의 스크롤을 즉시 내려주는 핵심 계산 함수
-function checkMemoAndScroll(memoId, query) {
-  const memoEl = document.getElementById(memoId);
-  if (!memoEl) return;
-  
-  if (query && memoEl.value.toLowerCase().includes(query)) {
-    memoEl.classList.add('memo-match');
-    const text = memoEl.value.toLowerCase();
-    const idx = text.indexOf(query);
-    
-    // 단어가 나타나기 전까지의 줄바꿈 수를 세서 위치를 찾아냄
-    const textUpToMatch = text.substring(0, idx);
-    const lineCount = textUpToMatch.split('\n').length;
-    
-    // 메모장 폰트 기준 줄 높이(Line Height) 약 22.4px로 추산
-    const lineHeight = 22.4; 
-    
-    // 해당 단어가 너무 윗벽에 딱 붙지 않도록 약간 여유를 두고 스크롤 이동 (-2 줄)
-    memoEl.scrollTop = Math.max(0, (lineCount - 2) * lineHeight); 
-  } else {
-    memoEl.classList.remove('memo-match');
-  }
-}
-
 function filterSearch() {
   const query = document.getElementById('search-input').value.trim().toLowerCase();
   const dayRows = document.querySelectorAll('.day-row');
   const monthDividers = document.querySelectorAll('.month-divider');
+
+  // ✨ 검색어에 따른 메모장 하이라이트 및 자동 스크롤 적용 로직
+  [1, 2].forEach(num => {
+    const disp = document.getElementById(`memo-disp-${num}`);
+    const text = memoData[num] || '';
+    
+    if (query && text.toLowerCase().includes(query)) {
+      const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+      disp.innerHTML = escHtml(text).replace(regex, '<mark>$1</mark>');
+      
+      // 검색된 단어(mark 태그) 위치로 스크롤을 부드럽게 쏴주는 기능!
+      setTimeout(() => {
+        const mark = disp.querySelector('mark');
+        if (mark) {
+          disp.scrollTop = Math.max(0, mark.offsetTop - 50);
+        }
+      }, 10);
+    } else {
+      disp.innerHTML = escHtml(text);
+    }
+  });
 
   if (!query) {
     monthDividers.forEach(div => div.style.display = '');
@@ -267,16 +289,8 @@ function filterSearch() {
         if(span) span.innerHTML = escHtml(entries[td.dataset.key] || '');
       });
     });
-    
-    // 메모장 하이라이트 상태 초기화
-    checkMemoAndScroll('memo1', '');
-    checkMemoAndScroll('memo2', '');
     return;
   }
-
-  // ✨ 메모장에 해당 검색어가 있으면 즉시 배경색을 켜고, 그 줄로 스크롤을 내립니다.
-  checkMemoAndScroll('memo1', query);
-  checkMemoAndScroll('memo2', query);
 
   const activeMonths = new Set();
   let matchedYears = new Set();
@@ -433,9 +447,8 @@ function exportToExcel() {
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), '다이어리');
   
-  const memo1 = document.getElementById('memo1').value;
-  const memo2 = document.getElementById('memo2').value;
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['메모 1','메모 2'],[memo1,memo2]]), '메모');
+  // ✨ 엑셀 저장 시에도 분리된 memoData를 가져오도록 수정
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['메모 1','메모 2'],[memoData[1], memoData[2]]]), '메모');
   
   const today = new Date();
   const ds = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
@@ -518,6 +531,12 @@ document.getElementById('btn-import-confirm').onclick = () => {
     })
     .then(() => {
       alert("🎉 서버 동기화 성공!\n엑셀 데이터가 정상적으로 저장되었습니다.");
+      
+      // ✨ 불러온 후 화면 내 메모장 데이터 즉시 업데이트
+      memoData[1] = pendingImportData.memo1;
+      memoData[2] = pendingImportData.memo2;
+      filterSearch(); 
+      
       pendingImportData=null;
       showToast('엑셀 불러오기 완료 ✅');
     })
@@ -559,7 +578,7 @@ document.getElementById('pw-numpad').onclick = (e) => {
 function handlePwInput() {
   const currentPw = localStorage.getItem(PW_KEY) || '0000';
   if (pwStep === 1) {
-    if (pwInputs[1] !== currentPw) showPwError(1, '현재 비밀번호가 틀렸습니다');
+    if (pwInputs[1] !== currentPw) showPw,Error(1, '현재 비밀번호가 틀렸습니다');
     else { pwStep = 2; pwInputs[2] = ''; renderPwStep(); }
   } else if (pwStep === 2) { newPw = pwInputs[2]; pwStep = 3; pwInputs[3] = ''; renderPwStep(); }
   else if (pwStep === 3) {
