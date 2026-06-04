@@ -5,7 +5,7 @@
 #header-top { display: flex; flex-direction: column; gap: 12px; }#header-main-row { display: flex; align-items: flex-start; gap: 20px; width: 100%; }#app-title { font-size: 22px; padding-top: 4px; }
 .memo-row { display: flex; gap: 15px; flex: 1; align-self: stretch; }.memo-wrap { flex: 1; display: flex; flex-direction: column; }.memo-label { font-size: 11px; color: #888888; font-weight: bold; margin-bottom: 5px; }
 
-/* 📝 메모 상자 스타일 및 애니메이션 (우측 메뉴 하단선과 오차 없이 일치하도록 244px로 셋팅) */.memo-box {  width: 100%; height: 244px !important; min-height: 244px !important;  background: #fcfcfc; border: 1.5px solid #333333; border-radius: 4px;  padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.6;  resize: none; overflow-y: auto; outline: none; transition: height 0.2s ease, background-color 0.2s;}.memo-box:focus {   border-color: #1a5fa8;   background: #ffffff;   height: 350px !important;}
+/* 📝 메모 상자 스타일 및 검색 하이라이트 효과 */.memo-box {  width: 100%; height: 244px !important; min-height: 244px !important;  background: #fcfcfc; border: 1.5px solid #333333; border-radius: 4px;  padding: 12px; font-family: inherit; font-size: 14px; line-height: 1.6;  resize: none; overflow-y: auto; outline: none; transition: height 0.2s ease, background-color 0.2s, border-color 0.2s;}.memo-box:focus {   border-color: #1a5fa8;   background: #ffffff;   height: 350px !important;}/* ✨ 검색된 단어가 메모에 있을 때 눈에 띄게 표시하는 스타일 */.memo-box.memo-match {  background-color: #fffde7 !important;  border: 2px solid #ffb300 !important;  box-shadow: 0 0 10px rgba(255, 179, 0, 0.3);}
 
 /* 🔍 버튼 목록 스타일 */.header-btns { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 130px; }
 .hbtn {  border: none; border-radius: 4px; padding: 8px 12px; font-size: 12px;  font-family: inherit; cursor: pointer; text-align: center; font-weight: bold;  letter-spacing: 0.03em; transition: background 0.15s;}.hbtn:active { transform: scale(0.97); }.hbtn.green  { background: #1d7a45; color: #fff; }.hbtn.green:hover  { background: #155c33; }.hbtn.blue   { background: #1a5fa8; color: #fff; }.hbtn.blue:hover   { background: #134880; }.hbtn.gray   { background: #eee; color: #333; border: 1px solid #ccc; }.hbtn.gray:hover   { background: #ddd; }.hbtn.gold   { background: #7a5a1a; color: #fff; }.hbtn.gold:hover   { background: #5c4213; }.hbtn.purple { background: #563d7c; color: #fff; }.hbtn.purple:hover { background: #402d5e; }
@@ -22,6 +22,42 @@
 .cell-text { display: block; padding: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; min-height: 60px; }.cell-text mark {  background-color: #ffeb3b;  color: #000000;  font-weight: bold;  padding: 1px 3px;  border-radius: 2px;}.cell-textarea { width: 100%; display: block; border: 2px solid #111111; padding: 10px; font-size: 14px; line-height: 1.6; resize: none; overflow: hidden; }.month-divider { background: #e0e0e0; cursor: pointer; }.month-divider td { padding: 10px; font-weight: 700; border-bottom: 2px solid #111111; }.collapsed-row { display: none; }
 #toast {  position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff;  padding: 10px 20px; border-radius: 30px; opacity: 0; transition: 0.3s;  pointer-events: none; z-index: 300; font-size: 14px;}#toast.show { opacity: 1; }
 /* ══ 모바일 전용 반응형 및 숨김 스타일 ══ */@media (max-width: 768px) {  #header.hide-header {    transform: translateY(-100%);    opacity: 0;    pointer-events: none;    position: fixed;    width: 100%;  }  #header { padding: 10px; }  #header-main-row { flex-direction: column; gap: 10px; }  #app-title { display: none; }  .memo-row { width: 100%; flex-direction: column; gap: 8px; }  .memo-box { height: 120px !important; min-height: 120px !important; }  .memo-box:focus { height: 360px !important; }  .header-btns {     width: 100%;     display: grid;     grid-template-columns: repeat(2, 1fr);     gap: 6px;     min-width: unset;  }  .hbtn { padding: 10px 5px; font-size: 11px; }  #btn-toggle-years { grid-column: span 2; padding: 10px; }  .side-search-block { grid-column: span 2; width: 100%; padding: 8px; }  #table-wrap { max-height: calc(100vh - 350px); }  #table-wrap.fullscreen-table { max-height: 100vh !important; }  td.entry-cell { width: 160px; }  .cell-text { padding: 8px; font-size: 13px; min-height: 50px; }  .cell-textarea { padding: 6px; font-size: 13px; }  .day-row.expanded-row td { height: 320px !important; }  td.entry-cell.collapsed-year { width: 36px !important; min-width: 36px !important; }}</style></head><body>
+
+<script>
+  (function(){
+    let pinInput = '';
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('numpad').onclick = (e) => {
+        const btn = e.target; 
+        if (!btn.classList.contains('num-btn') || btn.style.visibility === 'hidden') return;
+        
+        if (btn.classList.contains('del-btn')) {
+          pinInput = pinInput.slice(0,-1);
+        } else if (pinInput.length < 4) {
+          pinInput += btn.dataset.n;
+        }
+        
+        document.querySelectorAll('#pin-dots .pin-dot').forEach((d,i) => d.classList.toggle('filled', i < pinInput.length));
+        
+        if (pinInput.length === 4) {
+          if (pinInput === (localStorage.getItem('diary_pw') || '0000')) {
+            document.getElementById('lock-screen').classList.add('hidden');
+            document.getElementById('app').classList.add('visible');
+            if (window.startFirebaseApp) window.startFirebaseApp();
+            else window.isUnlocked = true;
+          } else {
+            document.getElementById('lock-error').classList.add('show');
+            setTimeout(() => {
+              pinInput = '';
+              document.querySelectorAll('#pin-dots .pin-dot').forEach(d => d.classList.remove('filled'));
+              document.getElementById('lock-error').classList.remove('show');
+            }, 500);
+          }
+        }
+      };
+    });
+  })();
+</script>
 
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
 <div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <textarea class="memo-box" id="memo1" placeholder="메모 1..."></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <textarea class="memo-box" id="memo2" placeholder="메모 2..."></textarea>          </div>        </div>        <div class="header-btns">          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn gray"   onclick="location.reload()">🔒 앱 잠금</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력...">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
@@ -65,39 +101,9 @@ let collapsedYears = [];
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 
-// ✨ 자바스크립트 전역 변수 및 이벤트 통합 (오류 원천 차단)
 window.exportToExcel = exportToExcel;
-
-/* -- 암호 입력 로직 일원화 -- */
-let pinInput = '';
-document.getElementById('numpad').onclick = (e) => {
-  const btn = e.target; 
-  if (!btn.classList.contains('num-btn') || btn.style.visibility === 'hidden') return;
-  
-  if (btn.classList.contains('del-btn')) {
-    pinInput = pinInput.slice(0,-1);
-  } else if (pinInput.length < 4) {
-    pinInput += btn.dataset.n;
-  }
-  
-  document.querySelectorAll('#pin-dots .pin-dot').forEach((d,i) => d.classList.toggle('filled', i < pinInput.length));
-  
-  if (pinInput.length === 4) {
-    if (pinInput === (localStorage.getItem(PW_KEY) || '0000')) {
-      document.getElementById('lock-screen').classList.add('hidden');
-      document.getElementById('app').classList.add('visible');
-      syncWithFirebase(); 
-      setTimeout(focusToday, 400);
-    } else {
-      document.getElementById('lock-error').classList.add('show');
-      setTimeout(() => {
-        pinInput = '';
-        document.querySelectorAll('#pin-dots .pin-dot').forEach(d => d.classList.remove('filled'));
-        document.getElementById('lock-error').classList.remove('show');
-      }, 500);
-    }
-  }
-};
+window.openPwModal = openPwModal;
+window.closePwModal = closePwModal;
 
 function syncWithFirebase() {
   onValue(ref(db, 'diary_data'), (snapshot) => {
@@ -111,12 +117,16 @@ function syncWithFirebase() {
       const data = snapshot.val();
       document.getElementById('memo1').value = data.memo1 || '';
       document.getElementById('memo2').value = data.memo2 || '';
+      filterSearch(); // 메모 데이터를 불러온 직후에도 검색어가 있다면 바로 반영
     }
   });
 }
 
 document.querySelectorAll('.memo-box').forEach(m => {
-  m.oninput = () => set(ref(db, `memos/${m.id}`), m.value);
+  m.oninput = () => {
+    set(ref(db, `memos/${m.id}`), m.value);
+    filterSearch(); // 입력 중에도 검색어와 실시간 매칭 확인
+  };
 });
 
 function buildTable() {
@@ -213,11 +223,16 @@ window.toggleRowExpand = function(rowEl, event) {
   }
 }
 
+// ✨ 메모 검색 및 하이라이트 통합 로직
 function filterSearch() {
   const query = document.getElementById('search-input').value.trim().toLowerCase();
   const dayRows = document.querySelectorAll('.day-row');
   const monthDividers = document.querySelectorAll('.month-divider');
+  
+  const memo1 = document.getElementById('memo1');
+  const memo2 = document.getElementById('memo2');
 
+  // 검색어가 비어있을 때 테이블 및 메모장 리셋
   if (!query) {
     monthDividers.forEach(div => div.style.display = '');
     dayRows.forEach(row => {
@@ -233,9 +248,27 @@ function filterSearch() {
         if(span) span.innerHTML = escHtml(entries[td.dataset.key] || '');
       });
     });
+    
+    // 메모장 하이라이트 해제
+    if(memo1) memo1.classList.remove('memo-match');
+    if(memo2) memo2.classList.remove('memo-match');
     return;
   }
 
+  // ✨ 검색어가 있을 때: 메모 1 & 2 내용 확인 및 효과 부여
+  if (memo1 && memo1.value.toLowerCase().includes(query)) {
+    memo1.classList.add('memo-match');
+  } else if (memo1) {
+    memo1.classList.remove('memo-match');
+  }
+
+  if (memo2 && memo2.value.toLowerCase().includes(query)) {
+    memo2.classList.add('memo-match');
+  } else if (memo2) {
+    memo2.classList.remove('memo-match');
+  }
+
+  // 테이블 일기 내용 필터링
   const activeMonths = new Set();
   let matchedYears = new Set();
 
@@ -526,7 +559,15 @@ function handlePwInput() {
   }
 }
 
-/* 🛠️ 모바일 전용 동적 스크롤 최적화 로직 (맨 위에서만 헤더 노출) */
+window.startFirebaseApp = function() {
+  syncWithFirebase();
+  setTimeout(focusToday, 400);
+};
+
+if (window.isUnlocked) {
+  window.startFirebaseApp();
+}
+
 const tableWrap = document.getElementById('table-wrap');
 const header = document.getElementById('header');
 
