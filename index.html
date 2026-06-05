@@ -22,7 +22,8 @@
 /* 🛠️ 레이아웃 전면 개선 구역 */td.entry-cell {  border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;  vertical-align: top; width: 220px; transition: all 0.2s ease; padding: 0 !important;  height: 1px; }
 .entry-container {  display: flex; flex-direction: column; height: 100%;}
 
-/* ✨ 1️⃣ 상단: 독립된 별개 캘린더 칸 */.calendar-part {  background: #e8f0fe;  border: 1px solid #b3d4fc;  border-radius: 6px;  margin: 6px 6px 0 6px;  padding: 6px 8px;  font-size: 12px; color: #1967d2; font-weight: 700;  display: none; white-space: pre-wrap; word-break: break-all;  box-shadow: 0 1px 2px rgba(0,0,0,0.05);}
+/* ✨ 1️⃣ 상단: 독립된 별개 캘린더 칸 */.calendar-part {  background: #e8f0fe;  border: 1px solid #b3d4fc;  border-radius: 6px;  margin: 6px 6px 0 6px;  padding: 6px 8px;  display: none;}
+/* ✨ 캘린더 개별 삭제 버튼 관련 디자인 */.cal-event-line {  display: flex; justify-content: space-between; align-items: flex-start;  margin-bottom: 4px;}.cal-event-line:last-child { margin-bottom: 0; }.cal-event-text {  flex: 1; font-size: 12px; color: #1967d2; font-weight: 700;  white-space: pre-wrap; word-break: break-all;}.cal-del-btn {  cursor: pointer; color: #888; font-size: 10px; padding: 2px 5px;  border-radius: 4px; background: #e0e0e0; transition: all 0.2s;  white-space: nowrap; margin-left: 6px; user-select: none;}.cal-del-btn:hover { background: #ffcdd2; color: #d32f2f; }
 
 /* 2️⃣ 중단: 일기 칸 */.diary-part {  flex: 1; padding: 12px; cursor: text; min-height: 50px;}
 /* 3️⃣ 하단: 독서 기록 칸 */.reading-part {  border-top: 1px solid #e5e5e5; background: #fdfdfd;  padding: 6px 12px; cursor: text; min-height: 32px; transition: all 0.2s;}.reading-part .cell-text:empty::before {  content: '📖 독서 기록...'; color: #ccc; font-size: 11px;}.reading-part:hover { background: #f0f8ff; }
@@ -67,7 +68,7 @@
 </script>
 
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
-<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          <button class="hbtn teal"   id="btn-reading-mode">📚 독서 기록 모아보기</button>          <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>          <!-- ✨ 자동 청소 버튼 추가 -->          <button class="hbtn dark-gray" id="btn-clean-calendar">🧹 기존 캘린더 흔적 싹 지우기</button>          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력... (엔터시 다음)">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기/독서 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
+<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          <button class="hbtn teal"   id="btn-reading-mode">📚 독서 기록 모아보기</button>          <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>          <button class="hbtn dark-gray" id="btn-clean-calendar">🧹 기존 캘린더 흔적 싹 지우기</button>          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력... (엔터시 다음)">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기/독서 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
 <div id="confirm-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">⚠️</div>    <div class="modal-title">기존 데이터를 덮어쓸까요?</div>    <div class="modal-desc">엑셀 파일을 불러오면 <strong>현재 저장된 모든 내용이<br>파일 내용으로 교체</strong>됩니다.</div>    <div class="modal-file-name" id="modal-file-name"></div>    <div class="modal-btns">      <button class="modal-btn cancel"  id="btn-import-cancel">취소</button>      <button class="modal-btn primary" id="btn-import-confirm">불러오기</button>    </div>  </div></div>
 <div id="pw-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">🔑</div>    <div class="modal-title">비밀번호 변경</div>
     <div class="pw-step-label">      <span id="pws-1" class="on">① 현재</span>      <span id="pws-2">② 새 비밀번호</span>      <span id="pws-3">③ 확인</span>    </div>
@@ -106,6 +107,7 @@ const PW_KEY = 'diary_pw';
 let entries = {};
 let readingEntries = {}; 
 let calendarEntries = {}; 
+let deletedCalendarEvents = {}; // ✨ 영구 삭제한 캘린더 일정 목록 저장소
 let memoData = { 1: '', 2: '' };
 let activeEditor = null;
 let pendingImportData = null;
@@ -118,7 +120,7 @@ let collapsedYears = [];
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 
-let dataLoaded = { diary: false, reading: false, calendar: false };
+let dataLoaded = { diary: false, reading: false, calendar: false, deletedCal: false };
 
 window.exportToExcel = exportToExcel;
 window.openPwModal = openPwModal;
@@ -136,7 +138,6 @@ document.getElementById('btn-clean-calendar').onclick = async () => {
     let text = cleanedEntries[key];
     if (text && text.includes('[🗓️')) {
       let lines = text.split('\n');
-      // [🗓️ 로 시작하거나 포함된 줄만 귀신같이 골라내서 삭제
       let newLines = lines.filter(line => !line.trim().includes('[🗓️'));
       cleanedEntries[key] = newLines.join('\n').trim();
       cleanedCount++;
@@ -145,11 +146,39 @@ document.getElementById('btn-clean-calendar').onclick = async () => {
 
   try {
     await set(ref(db, 'diary_data'), cleanedEntries);
-    await set(ref(db, 'calendar_data'), {}); // 캘린더 전용 데이터도 완전 초기화해서 꼬임 방지
+    await set(ref(db, 'calendar_data'), {}); 
+    await set(ref(db, 'deleted_calendar_data'), {}); // 영구삭제 목록도 싹 초기화
     alert(`✨ 청소 완료!\n총 ${cleanedCount}일 치의 일기에서 과거 캘린더 흔적을 싹 지웠습니다.\n\n이제 우측의 [📅 캘린더 연동] 버튼을 다시 눌러서 예쁜 박스형태로 캘린더를 새로 받아주세요!`);
   } catch (err) {
     alert("청소 중 오류 발생: " + err.message);
   }
+};
+
+// ✨ 캘린더 개별 줄 삭제 함수
+window.deleteCalendarLine = function(e, key, encodedLine) {
+  e.stopPropagation();
+  if(!confirm('해당 일정을 다이어리에서 삭제하시겠습니까?\n(삭제 후 다시 연동해도 부활하지 않습니다!)')) return;
+  
+  const lineText = decodeURIComponent(encodedLine);
+  
+  // 현재 보이는 캘린더 데이터에서 지우기
+  let text = calendarEntries[key] || '';
+  let lines = text.split('\n');
+  let newLines = lines.filter(l => l !== lineText);
+  let newText = newLines.join('\n').trim();
+  
+  calendarEntries[key] = newText;
+  set(ref(db, 'calendar_data/' + key), newText);
+  
+  // 영구삭제 목록(블랙리스트)에 추가하기
+  if (!deletedCalendarEvents[key]) deletedCalendarEvents[key] = [];
+  if (!deletedCalendarEvents[key].includes(lineText)) {
+     deletedCalendarEvents[key].push(lineText);
+     set(ref(db, 'deleted_calendar_data/' + key), deletedCalendarEvents[key]);
+  }
+  
+  showToast('일정 삭제됨 🗑️');
+  executeSearch(false);
 };
 
 let tokenClient; let gapiInited = false; let gisInited = false;
@@ -182,12 +211,18 @@ async function fetchAndSaveCalendarEvents() {
       const d = new Date(start); const y = d.getFullYear(); const m = d.getMonth() + 1; const day = d.getDate();
       const key = `${y}-${m}-${day}`; if(!YEARS.includes(y)) return;
       const eventText = `[🗓️ ${event.summary}]`;
+      
+      // ✨ 유저가 이전에 삭제한(블랙리스트) 일정이면 다시 살리지 않고 무시함
+      if (deletedCalendarEvents[key] && deletedCalendarEvents[key].includes(eventText)) {
+        return; 
+      }
+      
       let currentText = newCalEntries[key] || '';
       if (!currentText.includes(eventText)) { newCalEntries[key] = currentText ? currentText + '\n' + eventText : eventText; updatedCount++; }
     });
     if (updatedCount > 0) {
       await set(ref(db, 'calendar_data'), newCalEntries); alert(`🎉 구글 캘린더 연동 완료!\n상단 독립 칸에 총 ${updatedCount}개의 일정이 배치되었습니다.`);
-    } else { alert("새롭게 감지된 일정이 없습니다."); }
+    } else { alert("새롭게 추가된 일정이 없습니다."); }
   } catch (err) { alert("캘린더 통신 실패: " + err.message); }
 }
 
@@ -197,6 +232,9 @@ function syncWithFirebase() {
   onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
   onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
   onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
+  
+  // ✨ 영구 삭제 데이터 로드 추가
+  onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
 
   get(child(ref(db), 'memos')).then((snapshot) => {
     if (snapshot.exists()) { const data = snapshot.val(); memoData[1] = data.memo1 || ''; memoData[2] = data.memo2 || ''; executeSearch(false); }
@@ -333,10 +371,21 @@ function executeSearch(isNext = false) {
 
       const dSpan = td.querySelector('.diary-part .cell-text'); const rSpan = td.querySelector('.reading-part .cell-text'); const cDiv = td.querySelector('.calendar-part');
 
+      // ✨ 캘린더 데이터 분할 렌더링 및 개별 X 버튼 부착
       if (cOrig.trim() !== '') {
         cDiv.style.display = 'block';
-        if (query !== '' && cOrig.toLowerCase().includes(query)) { hasMatch = true; matchedYears.add(parseInt(td.dataset.year)); cDiv.innerHTML = escHtml(cOrig).replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>'); } 
-        else cDiv.innerHTML = escHtml(cOrig);
+        const lines = cOrig.split('\n').filter(l => l.trim() !== '');
+        let html = '';
+        lines.forEach(line => {
+          let dispLine = escHtml(line);
+          if (query !== '' && line.toLowerCase().includes(query)) {
+            hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
+            dispLine = dispLine.replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>');
+          }
+          const safeLine = encodeURIComponent(line); // 따옴표 오류 방지
+          html += `<div class="cal-event-line"><span class="cal-event-text">${dispLine}</span> <span class="cal-del-btn" onclick="deleteCalendarLine(event, '${key}', '${safeLine}')">❌</span></div>`;
+        });
+        cDiv.innerHTML = html;
       } else { cDiv.style.display = 'none'; cDiv.innerHTML = ''; }
 
       if (dOrig.toLowerCase().includes(query) && query !== '') { hasMatch = true; matchedYears.add(parseInt(td.dataset.year)); if(dSpan) dSpan.innerHTML = escHtml(dOrig).replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>'); } 
