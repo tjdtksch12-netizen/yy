@@ -9,7 +9,7 @@
 /* ✨ 공통: 검색 형광펜 스타일 */mark { background-color: #ffeb3b; color: #000; font-weight: bold; padding: 1px 3px; border-radius: 2px; }mark.active-mark { background-color: #ff7043 !important; color: #fff !important; box-shadow: 0 0 5px rgba(255,112,67,0.7); border-radius: 3px; }
 
 /* 🔍 버튼 목록 스타일 */.header-btns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; min-width: 130px; }
-.hbtn {  border: none; border-radius: 4px; padding: 7px 12px; font-size: 12px;  font-family: inherit; cursor: pointer; text-align: center; font-weight: bold;  letter-spacing: 0.03em; transition: background 0.15s;}.hbtn:active { transform: scale(0.97); }.hbtn.green  { background: #1d7a45; color: #fff; }.hbtn.green:hover  { background: #155c33; }.hbtn.blue   { background: #1a5fa8; color: #fff; }.hbtn.blue:hover   { background: #134880; }.hbtn.gray   { background: #eee; color: #333; border: 1px solid #ccc; }.hbtn.gray:hover   { background: #ddd; }.hbtn.gold   { background: #7a5a1a; color: #fff; }.hbtn.gold:hover   { background: #5c4213; }.hbtn.purple { background: #563d7c; color: #fff; }.hbtn.purple:hover { background: #402d5e; }.hbtn.red { background: #d32f2f; color: #fff; }.hbtn.red:hover { background: #b71c1c; }.hbtn.teal { background: #00796b; color: #fff; border: 1px solid #004d40; }.hbtn.teal:hover { background: #004d40; }.hbtn.dark-gray { background: #555; color: #fff; }.hbtn.dark-gray:hover { background: #333; }
+.hbtn {  border: none; border-radius: 4px; padding: 7px 12px; font-size: 12px;  font-family: inherit; cursor: pointer; text-align: center; font-weight: bold;  letter-spacing: 0.03em; transition: background 0.15s;}.hbtn:active { transform: scale(0.97); }.hbtn.green  { background: #1d7a45; color: #fff; }.hbtn.green:hover  { background: #155c33; }.hbtn.blue   { background: #1a5fa8; color: #fff; }.hbtn.blue:hover   { background: #134880; }.hbtn.gray   { background: #eee; color: #333; border: 1px solid #ccc; }.hbtn.gray:hover   { background: #ddd; }.hbtn.gold   { background: #7a5a1a; color: #fff; }.hbtn.gold:hover   { background: #5c4213; }.hbtn.purple { background: #563d7c; color: #fff; }.hbtn.purple:hover { background: #402d5e; }.hbtn.red { background: #d32f2f; color: #fff; }.hbtn.red:hover { background: #b71c1c; }.hbtn.teal { background: #00796b; color: #fff; border: 1px solid #004d40; }.hbtn.teal:hover { background: #004d40; }.hbtn.dark-gray { background: #555; color: #fff; }.hbtn.dark-gray:hover { background: #333; }.hbtn.orange { background: #e67e22; color: #fff; }.hbtn.orange:hover { background: #d35400; }
 
 .side-search-block {  background: #f4f4f4; border: 1.5px solid #333; border-radius: 4px;  padding: 6px; display: flex; flex-direction: column; gap: 6px;}.side-search-input {  width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 3px;  font-family: inherit; font-size: 12px; outline: none; background: #ffffff;}.side-search-input:focus { border-color: #1a5fa8; }.hbtn.search-btn {  background: #333; color: #fff; padding: 6px 0; font-size: 11px; width: 100%;}.hbtn.search-btn:hover { background: #000; }
 
@@ -35,7 +35,17 @@
 
 #toast {  position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff;  padding: 10px 20px; border-radius: 30px; opacity: 0; transition: 0.3s;  pointer-events: none; z-index: 300; font-size: 14px;}#toast.show { opacity: 1; }
 
-@media (max-width: 768px) {  #header.hide-header { transform: translateY(-100%); opacity: 0; pointer-events: none; position: fixed; width: 100%; }  #header { padding: 10px; }  #header-main-row { flex-direction: column; gap: 10px; }  #app-title { display: none; }  .memo-row { width: 100%; flex-direction: column; gap: 8px; }  .memo-box { height: 120px !important; min-height: 120px !important; }  .memo-box:focus { height: 360px !important; }  .header-btns { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; min-width: unset; }  .hbtn { padding: 8px 5px; font-size: 11px; }  #btn-toggle-years, #btn-reading-mode { grid-column: span 3; padding: 10px; }  .side-search-block { grid-column: span 3; width: 100%; padding: 8px; }  #table-wrap { max-height: calc(100vh - 350px); }  #table-wrap.fullscreen-table { max-height: 100vh !important; }  td.entry-cell { width: 160px; }  .diary-part { padding: 8px; }  .reading-part { padding: 6px 8px; }  .cell-text { font-size: 13px; }  .cell-textarea { padding: 6px; font-size: 13px; }  .day-row.expanded-row td { height: 320px !important; }  td.entry-cell.collapsed-year { width: 36px !important; min-width: 36px !important; }}</style></head><body>
+@media (max-width: 768px) {  #header.hide-header { transform: translateY(-100%); opacity: 0; pointer-events: none; position: fixed; width: 100%; }  #header { padding: 10px; }  #header-main-row { flex-direction: column; gap: 10px; }  #app-title { display: none; }  .memo-row { width: 100%; flex-direction: column; gap: 8px; }  .memo-box { height: 120px !important; min-height: 120px !important; }  .memo-box:focus { height: 360px !important; }  
+  /* ✨ 모바일 버튼 3열 레이아웃 최적화 */
+  .header-btns { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; min-width: unset; }  
+  .hbtn { padding: 8px 5px; font-size: 11px; }  
+  #btn-reading-mode { grid-column: span 3; }
+  /* 하단 오늘쓰기와 전체보기 버튼 그리드 병합 조절 */
+  #btn-today { grid-column: span 1; }
+  #btn-toggle-years { grid-column: span 2; padding: 10px; }  
+  .side-search-block { grid-column: span 3; width: 100%; padding: 8px; }  
+  
+  #table-wrap { max-height: calc(100vh - 350px); }  #table-wrap.fullscreen-table { max-height: 100vh !important; }  td.entry-cell { width: 160px; }  .diary-part { padding: 8px; }  .reading-part { padding: 6px 8px; }  .cell-text { font-size: 13px; }  .cell-textarea { padding: 6px; font-size: 13px; }  .day-row.expanded-row td { height: 320px !important; }  td.entry-cell.collapsed-year { width: 36px !important; min-width: 36px !important; }}</style></head><body>
 
 <script>
   (function(){
@@ -68,7 +78,7 @@
 </script>
 
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
-<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          <button class="hbtn teal"   id="btn-reading-mode">📚 독서 기록 모아보기</button>          <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>          <button class="hbtn dark-gray" id="btn-clean-calendar">🧹 기존 캘린더 흔적 싹 지우기</button>          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력... (엔터시 다음)">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기/독서 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
+<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          <button class="hbtn teal"   id="btn-reading-mode">📚 독서 기록 모아보기</button>          <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>          <button class="hbtn dark-gray" id="btn-clean-calendar">🧹 캘린더 지우기</button>          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn gray"   onclick="location.reload()">🔒 앱 잠금</button>          <button class="hbtn orange" onclick="goToToday()" id="btn-today">🎯 오늘 일기 쓰기</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력... (엔터시 다음)">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기/독서 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
 <div id="confirm-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">⚠️</div>    <div class="modal-title">기존 데이터를 덮어쓸까요?</div>    <div class="modal-desc">엑셀 파일을 불러오면 <strong>현재 저장된 모든 내용이<br>파일 내용으로 교체</strong>됩니다.</div>    <div class="modal-file-name" id="modal-file-name"></div>    <div class="modal-btns">      <button class="modal-btn cancel"  id="btn-import-cancel">취소</button>      <button class="modal-btn primary" id="btn-import-confirm">불러오기</button>    </div>  </div></div>
 <div id="pw-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">🔑</div>    <div class="modal-title">비밀번호 변경</div>
     <div class="pw-step-label">      <span id="pws-1" class="on">① 현재</span>      <span id="pws-2">② 새 비밀번호</span>      <span id="pws-3">③ 확인</span>    </div>
@@ -107,7 +117,7 @@ const PW_KEY = 'diary_pw';
 let entries = {};
 let readingEntries = {}; 
 let calendarEntries = {}; 
-let deletedCalendarEvents = {}; // ✨ 영구 삭제한 캘린더 일정 목록 저장소
+let deletedCalendarEvents = {}; 
 let memoData = { 1: '', 2: '' };
 let activeEditor = null;
 let pendingImportData = null;
@@ -126,7 +136,6 @@ window.exportToExcel = exportToExcel;
 window.openPwModal = openPwModal;
 window.closePwModal = closePwModal;
 
-// ✨ 일기장에 박혀버린 캘린더 찌꺼기 완벽 청소 기능
 document.getElementById('btn-clean-calendar').onclick = async () => {
   if (!confirm("일기장에 섞여버린 기존 캘린더 일정([🗓️...])들을 자동으로 모두 지우시겠습니까?\n\n(직접 쓰신 진짜 일기는 안전하게 100% 보존됩니다!)")) return;
   showToast("일기장 대청소 중...");
@@ -147,21 +156,19 @@ document.getElementById('btn-clean-calendar').onclick = async () => {
   try {
     await set(ref(db, 'diary_data'), cleanedEntries);
     await set(ref(db, 'calendar_data'), {}); 
-    await set(ref(db, 'deleted_calendar_data'), {}); // 영구삭제 목록도 싹 초기화
+    await set(ref(db, 'deleted_calendar_data'), {}); 
     alert(`✨ 청소 완료!\n총 ${cleanedCount}일 치의 일기에서 과거 캘린더 흔적을 싹 지웠습니다.\n\n이제 우측의 [📅 캘린더 연동] 버튼을 다시 눌러서 예쁜 박스형태로 캘린더를 새로 받아주세요!`);
   } catch (err) {
     alert("청소 중 오류 발생: " + err.message);
   }
 };
 
-// ✨ 캘린더 개별 줄 삭제 함수
 window.deleteCalendarLine = function(e, key, encodedLine) {
   e.stopPropagation();
   if(!confirm('해당 일정을 다이어리에서 삭제하시겠습니까?\n(삭제 후 다시 연동해도 부활하지 않습니다!)')) return;
   
   const lineText = decodeURIComponent(encodedLine);
   
-  // 현재 보이는 캘린더 데이터에서 지우기
   let text = calendarEntries[key] || '';
   let lines = text.split('\n');
   let newLines = lines.filter(l => l !== lineText);
@@ -170,7 +177,6 @@ window.deleteCalendarLine = function(e, key, encodedLine) {
   calendarEntries[key] = newText;
   set(ref(db, 'calendar_data/' + key), newText);
   
-  // 영구삭제 목록(블랙리스트)에 추가하기
   if (!deletedCalendarEvents[key]) deletedCalendarEvents[key] = [];
   if (!deletedCalendarEvents[key].includes(lineText)) {
      deletedCalendarEvents[key].push(lineText);
@@ -212,7 +218,6 @@ async function fetchAndSaveCalendarEvents() {
       const key = `${y}-${m}-${day}`; if(!YEARS.includes(y)) return;
       const eventText = `[🗓️ ${event.summary}]`;
       
-      // ✨ 유저가 이전에 삭제한(블랙리스트) 일정이면 다시 살리지 않고 무시함
       if (deletedCalendarEvents[key] && deletedCalendarEvents[key].includes(eventText)) {
         return; 
       }
@@ -232,8 +237,6 @@ function syncWithFirebase() {
   onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
   onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
   onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
-  
-  // ✨ 영구 삭제 데이터 로드 추가
   onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
 
   get(child(ref(db), 'memos')).then((snapshot) => {
@@ -371,7 +374,6 @@ function executeSearch(isNext = false) {
 
       const dSpan = td.querySelector('.diary-part .cell-text'); const rSpan = td.querySelector('.reading-part .cell-text'); const cDiv = td.querySelector('.calendar-part');
 
-      // ✨ 캘린더 데이터 분할 렌더링 및 개별 X 버튼 부착
       if (cOrig.trim() !== '') {
         cDiv.style.display = 'block';
         const lines = cOrig.split('\n').filter(l => l.trim() !== '');
@@ -382,7 +384,7 @@ function executeSearch(isNext = false) {
             hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
             dispLine = dispLine.replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>');
           }
-          const safeLine = encodeURIComponent(line); // 따옴표 오류 방지
+          const safeLine = encodeURIComponent(line); 
           html += `<div class="cal-event-line"><span class="cal-event-text">${dispLine}</span> <span class="cal-del-btn" onclick="deleteCalendarLine(event, '${key}', '${safeLine}')">❌</span></div>`;
         });
         cDiv.innerHTML = html;
@@ -427,6 +429,31 @@ function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 function toggleMonth(m) { if(document.getElementById('search-input').value.trim() || isReadingMode) return; document.querySelectorAll(`.month-${m}`).forEach(r => r.classList.toggle('collapsed-row')); }
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
 
+// ✨ 오늘 일기 쓰기 (스마트 포커스 기능)
+window.goToToday = function() {
+  const searchInput = document.getElementById('search-input');
+  if (searchInput.value.trim() !== '') { searchInput.value = ''; }
+  if (isReadingMode) { document.getElementById('btn-reading-mode').click(); } 
+  else { executeSearch(false); }
+
+  const now = new Date(); const y = now.getFullYear(); const m = now.getMonth() + 1; const d = now.getDate(); const key = `${y}-${m}-${d}`;
+  if (collapsedYears.includes(y)) toggleYear(y);
+
+  setTimeout(() => {
+    const targetTd = document.querySelector(`td[data-key="${key}"]`);    
+    if (targetTd) {
+      const monthRows = document.querySelectorAll(`.month-${m}`); 
+      if (monthRows.length > 0 && monthRows[0].classList.contains('collapsed-row')) toggleMonth(m);
+      
+      const targetDiaryPart = targetTd.querySelector('.diary-part'); 
+      if(targetDiaryPart) openSection(targetDiaryPart, 'diary', key, null);
+      
+      targetTd.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 150);
+};
+
+// 기존 로드용 포커스
 function focusToday() {
   if(document.getElementById('search-input').value.trim() || isReadingMode) return;
   const now = new Date(); const y = now.getFullYear(); const m = now.getMonth() + 1; const d = now.getDate(); const key = `${y}-${m}-${d}`;
@@ -434,7 +461,6 @@ function focusToday() {
   const targetTd = document.querySelector(`td[data-key="${key}"]`);    
   if (targetTd) {
     const monthRows = document.querySelectorAll(`.month-${m}`); if (monthRows.length > 0 && monthRows[0].classList.contains('collapsed-row')) toggleMonth(m);
-    const targetDiaryPart = targetTd.querySelector('.diary-part'); if(targetDiaryPart) openSection(targetDiaryPart, 'diary', key, null);
     setTimeout(() => targetTd.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
   }
 }
