@@ -131,6 +131,7 @@ const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 
 let dataLoaded = { diary: false, reading: false, calendar: false, deletedCal: false };
+let initialLoadDone = false; // 최초 1회 포커스를 위한 플래그
 
 window.exportToExcel = exportToExcel;
 window.openPwModal = openPwModal;
@@ -232,12 +233,27 @@ async function fetchAndSaveCalendarEvents() {
 }
 
 function syncWithFirebase() {
-  const triggerRender = () => { buildTable(); executeSearch(false); };
+  const triggerRender = () => { 
+    buildTable(); 
+    executeSearch(false); 
+    
+    // ✨ 모든 데이터가 로드된 직후 딱 한 번만 자동 포커스/스크롤 실행
+    if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
+      initialLoadDone = true;
+      setTimeout(() => {
+        if (window.innerWidth > 768) {
+          goToToday(); // PC인 경우: 바로 글을 쓸 수 있도록 커서 활성화
+        } else {
+          focusToday(); // 모바일인 경우: 키보드가 화면을 가리지 않도록 위치만 이동
+        }
+      }, 150);
+    }
+  };
   
-  onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
-  onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
-  onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
-  onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { console.warn(err); triggerRender(); });
+  onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.diary = true; triggerRender(); });
+  onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.reading = true; triggerRender(); });
+  onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.calendar = true; triggerRender(); });
+  onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.deletedCal = true; triggerRender(); });
 
   get(child(ref(db), 'memos')).then((snapshot) => {
     if (snapshot.exists()) { const data = snapshot.val(); memoData[1] = data.memo1 || ''; memoData[2] = data.memo2 || ''; executeSearch(false); }
@@ -440,7 +456,7 @@ window.goToToday = function() {
   if (collapsedYears.includes(y)) toggleYear(y);
 
   setTimeout(() => {
-    const targetTd = document.querySelector(`td[data-key="${key}"]`);    
+    const targetTd = document.querySelector(`td[data-key="${key}"]`);   
     if (targetTd) {
       const monthRows = document.querySelectorAll(`.month-${m}`); 
       if (monthRows.length > 0 && monthRows[0].classList.contains('collapsed-row')) toggleMonth(m);
@@ -453,12 +469,12 @@ window.goToToday = function() {
   }, 150);
 };
 
-// 기존 로드용 포커스
+// 모바일용 단순 위치 이동 (가상 키보드 가림 현상 방지용)
 function focusToday() {
   if(document.getElementById('search-input').value.trim() || isReadingMode) return;
   const now = new Date(); const y = now.getFullYear(); const m = now.getMonth() + 1; const d = now.getDate(); const key = `${y}-${m}-${d}`;
   if (collapsedYears.includes(y)) toggleYear(y);
-  const targetTd = document.querySelector(`td[data-key="${key}"]`);    
+  const targetTd = document.querySelector(`td[data-key="${key}"]`);   
   if (targetTd) {
     const monthRows = document.querySelectorAll(`.month-${m}`); if (monthRows.length > 0 && monthRows[0].classList.contains('collapsed-row')) toggleMonth(m);
     setTimeout(() => targetTd.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
@@ -547,7 +563,10 @@ function handlePwInput() {
   else if (pwStep === 3) { if (pwInputs[3] !== newPw) showPwError(3, '비밀번호가 일치하지 않습니다'); else { localStorage.setItem(PW_KEY, newPw); closePwModal(); showToast('비밀번호 변경 완료 🔑'); } }
 }
 
-window.startFirebaseApp = function() { syncWithFirebase(); setTimeout(focusToday, 400); };
+// ✨ 앱 시작 함수 (안전성을 위해 맹목적인 setTimeout은 제거하고 데이터 로딩 함수에 위임)
+window.startFirebaseApp = function() { 
+  syncWithFirebase(); 
+};
 if (window.isUnlocked) window.startFirebaseApp();
 
 const tableWrap = document.getElementById('table-wrap'); const header = document.getElementById('header');
