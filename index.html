@@ -131,7 +131,7 @@ const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 
 let dataLoaded = { diary: false, reading: false, calendar: false, deletedCal: false };
-let initialLoadDone = false; // 최초 1회 포커스를 위한 플래그
+let initialLoadDone = false;
 
 window.exportToExcel = exportToExcel;
 window.openPwModal = openPwModal;
@@ -237,14 +237,13 @@ function syncWithFirebase() {
     buildTable(); 
     executeSearch(false); 
     
-    // ✨ 모든 데이터가 로드된 직후 딱 한 번만 자동 포커스/스크롤 실행
     if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
       initialLoadDone = true;
       setTimeout(() => {
         if (window.innerWidth > 768) {
-          goToToday(); // PC인 경우: 바로 글을 쓸 수 있도록 커서 활성화
+          goToToday();
         } else {
-          focusToday(); // 모바일인 경우: 키보드가 화면을 가리지 않도록 위치만 이동
+          focusToday();
         }
       }, 150);
     }
@@ -318,9 +317,25 @@ function buildTable() {
     }
   });
 
+  // ✅ 버그 수정 1: openCell 이 정의되지 않아 ReferenceError 발생하던 문제 해결
+  // 접힌 연도 셀 클릭 시 toggleYear, 일반 셀 클릭 시 일기 파트 열기
   document.querySelectorAll('.entry-cell').forEach(td => { td.onclick = () => openCell(td); });
   applyCollapsedYears();
 }
+
+// ✅ 버그 수정 1: openCell 함수 정의 추가
+window.openCell = function(td) {
+  const y = parseInt(td.dataset.year);
+  // 접힌 연도 열 클릭 → 해당 연도 펼치기
+  if (collapsedYears.includes(y)) {
+    toggleYear(y);
+    return;
+  }
+  // 일기칸 내 빈 틈 / 캘린더 영역 클릭 → 일기 파트 열기
+  const key = td.dataset.key;
+  const diaryPart = td.querySelector('.diary-part');
+  if (diaryPart) openSection(diaryPart, 'diary', key, null);
+};
 
 window.toggleYear = function(y) {
   if (collapsedYears.includes(y)) collapsedYears = collapsedYears.filter(year => year !== y);
@@ -345,6 +360,12 @@ window.toggleRowExpand = function(rowEl, event) {
 
 window.openSection = function(sectionEl, type, key, event) {
   if (event) event.stopPropagation();
+
+  const selection = window.getSelection();
+  if (selection && selection.toString().length > 0) {
+    return; 
+  }
+
   if (sectionEl.closest('td').classList.contains('collapsed-year')) { toggleYear(parseInt(sectionEl.closest('td').dataset.year)); return; }
   if (activeEditor) closeEditor();
   
@@ -445,7 +466,6 @@ function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 function toggleMonth(m) { if(document.getElementById('search-input').value.trim() || isReadingMode) return; document.querySelectorAll(`.month-${m}`).forEach(r => r.classList.toggle('collapsed-row')); }
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
 
-// ✨ 오늘 일기 쓰기 (스마트 포커스 기능)
 window.goToToday = function() {
   const searchInput = document.getElementById('search-input');
   if (searchInput.value.trim() !== '') { searchInput.value = ''; }
@@ -469,7 +489,6 @@ window.goToToday = function() {
   }, 150);
 };
 
-// 모바일용 단순 위치 이동 (가상 키보드 가림 현상 방지용)
 function focusToday() {
   if(document.getElementById('search-input').value.trim() || isReadingMode) return;
   const now = new Date(); const y = now.getFullYear(); const m = now.getMonth() + 1; const d = now.getDate(); const key = `${y}-${m}-${d}`;
@@ -481,12 +500,16 @@ function focusToday() {
   }
 }
 
+// ✅ 버그 수정 2: 엑셀 내보내기 - 요일 계산 연도 고정(2024) 문제 해결
+// 각 행이 여러 연도를 아우르므로 현재 연도(currentYear) 기준으로 요일 계산
 function exportToExcel() {
   const wb = XLSX.utils.book_new(); const sheetData = [['날짜','요일',...YEARS.map(y=>y+'년')]];
   MONTHS.forEach(m => {
     for (let d = 1; d <= 31; d++) {
       if (m === 2 && d > 29) continue; if ([4, 6, 9, 11].includes(m) && d > 30) continue;
-      const dow = new Date(2024, m-1, d).getDay(); const row = [`${m}월 ${d}일`, DAYS[dow]];
+      // ✅ 수정: 하드코딩된 2024 대신 currentYear 사용
+      const dow = new Date(currentYear, m-1, d).getDay();
+      const row = [`${m}월 ${d}일`, DAYS[dow]];
       YEARS.forEach(y => {
         const key = `${y}-${m}-${d}`; let cellContent = '';
         if (calendarEntries[key]) cellContent += `[🗓️ 일정]\n${calendarEntries[key]}\n\n`;
@@ -512,15 +535,36 @@ document.getElementById('excel-file-input').onchange = (e) => {
       const wb = XLSX.read(evt.target.result, {type:'array'}); const sheetName = wb.SheetNames.find(n => n.includes('다이어리')) || wb.SheetNames[0];
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:''}); if (rows.length < 2) throw new Error('행 데이터 부족');
       const yearColMap = {}; rows[0].forEach((cell,i) => { const m=String(cell).match(/(\d{4})/); if(m) yearColMap[parseInt(m[1])]=i; });
-      const newEntries = {}; let validCount = 0;
+      // ✅ 버그 수정 3: 엑셀 가져오기 시 독서 기록을 reading_data로 별도 복원
+      const newEntries = {}; const newReadingEntries = {}; let validCount = 0;
       rows.slice(1).forEach(row => {
         let ds = String(row[0]||'').replace(/\s+/g, ''); if(!ds) return; let month = null, day = null;
         const m1 = ds.match(/^(\d+)월(\d+)일$/); const m2 = ds.match(/^(\d+)\/(\d+)$/);
         if (m1) { month=parseInt(m1[1]); day=parseInt(m1[2]); } else if (m2) { month=parseInt(m2[1]); day=parseInt(m2[2]); } else return;
-        YEARS.forEach(y => { const ci = yearColMap[y]; if (ci===undefined) return; const val = String(row[ci]||'').trim(); if (val) { newEntries[`${y}-${month}-${day}`] = val; validCount++; } });
+        YEARS.forEach(y => {
+          const ci = yearColMap[y]; if (ci===undefined) return; const val = String(row[ci]||'').trim(); if (!val) return;
+          const key = `${y}-${month}-${day}`;
+          // 독서 기록 구간([📚 독서 기록] 이하)을 분리해서 reading_data로 저장
+          const readingMarker = '[📚 독서 기록]';
+          const readingIdx = val.indexOf(readingMarker);
+          if (readingIdx !== -1) {
+            const diaryPart = val.substring(0, readingIdx).replace('[🗓️ 일정]\n','').replace(/^\n+|\n+$/g,'').trim();
+            const readingPart = val.substring(readingIdx + readingMarker.length).replace(/^\n+|\n+$/g,'').trim();
+            // 캘린더 일정 구간([🗓️ 일정] 이하)은 diary_data에서 제외
+            const cleanDiary = diaryPart.replace(/^\[🗓️ 일정\]\n.*\n\n/s,'').trim();
+            if (cleanDiary) { newEntries[key] = cleanDiary; }
+            if (readingPart) { newReadingEntries[key] = readingPart; }
+          } else {
+            // 독서 기록 없는 경우 캘린더 구간만 제거 후 diary_data에 저장
+            const cleanDiary = val.replace(/^\[🗓️ 일정\]\n.*?\n\n/s,'').trim();
+            if (cleanDiary) { newEntries[key] = cleanDiary; }
+          }
+          validCount++;
+        });
       });
       let newMemo1='', newMemo2=''; const msn = wb.SheetNames.find(n => n.includes('메모')); if (msn) { const mr = XLSX.utils.sheet_to_json(wb.Sheets[msn], {header:1, defval:''}); if (mr.length>=2) { newMemo1=String(mr[1][0]||''); newMemo2=String(mr[1][1]||''); } }
-      if (validCount === 0) return alert("유효 데이터 없음"); pendingImportData = {entries:newEntries, memo1:newMemo1, memo2:newMemo2};
+      if (validCount === 0) return alert("유효 데이터 없음");
+      pendingImportData = {entries:newEntries, readingEntries:newReadingEntries, memo1:newMemo1, memo2:newMemo2};
       document.getElementById('modal-file-name').textContent = `📄 ${file.name} (${validCount}건)`; document.getElementById('confirm-modal').classList.add('open');
     } catch(err) { alert('분석 오류: ' + err.message); }
   }; reader.readAsArrayBuffer(file);
@@ -528,7 +572,10 @@ document.getElementById('excel-file-input').onchange = (e) => {
 document.getElementById('btn-import-cancel').onclick = () => { pendingImportData=null; document.getElementById('confirm-modal').classList.remove('open'); };
 document.getElementById('btn-import-confirm').onclick = () => {
   if (!pendingImportData) return; document.getElementById('confirm-modal').classList.remove('open');
-  set(ref(db, 'diary_data'), pendingImportData.entries).then(() => set(ref(db, 'memos'), {memo1: pendingImportData.memo1, memo2: pendingImportData.memo2}))
+  // ✅ 버그 수정 3: reading_data도 함께 Firebase에 저장
+  set(ref(db, 'diary_data'), pendingImportData.entries)
+    .then(() => set(ref(db, 'reading_data'), pendingImportData.readingEntries))
+    .then(() => set(ref(db, 'memos'), {memo1: pendingImportData.memo1, memo2: pendingImportData.memo2}))
     .then(() => { alert("🎉 가져오기 성공!"); memoData[1] = pendingImportData.memo1; memoData[2] = pendingImportData.memo2; executeSearch(false); pendingImportData=null; showToast('완료 ✅'); }).catch(err => alert("오류: " + err.message));
 };
 
@@ -563,7 +610,6 @@ function handlePwInput() {
   else if (pwStep === 3) { if (pwInputs[3] !== newPw) showPwError(3, '비밀번호가 일치하지 않습니다'); else { localStorage.setItem(PW_KEY, newPw); closePwModal(); showToast('비밀번호 변경 완료 🔑'); } }
 }
 
-// ✨ 앱 시작 함수 (안전성을 위해 맹목적인 setTimeout은 제거하고 데이터 로딩 함수에 위임)
 window.startFirebaseApp = function() { 
   syncWithFirebase(); 
 };
