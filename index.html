@@ -555,8 +555,11 @@ function syncWithFirebase() {
     if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
       initialLoadDone = true;
       setTimeout(() => {
-        if (window.innerWidth > 768) { goToToday(); } 
-        else { focusToday(); }
+        if (window.innerWidth > 768) { 
+          goToToday(); 
+        } else { 
+          window.openMemo(1);
+        }
       }, 150);
     }
   };
