@@ -556,9 +556,17 @@ function syncWithFirebase() {
       initialLoadDone = true;
       setTimeout(() => {
         if (window.innerWidth > 768) { 
+          // PC 화면: 오늘 날짜 커서
           goToToday(); 
         } else { 
+          // 모바일 화면: 첫 번째 메모 오픈 후 커서를 맨 앞으로 이동 및 화면 맨 위 고정
           window.openMemo(1);
+          const memoEdit = document.getElementById('memo-edit-1');
+          if (memoEdit) {
+            memoEdit.setSelectionRange(0, 0); // 텍스트 맨 앞으로 커서 이동
+            memoEdit.scrollTop = 0; // 텍스트 에어리어 내부 스크롤 상단 고정
+            window.scrollTo(0, 0); // 전체 브라우저 화면 상단 고정
+          }
         }
       }, 150);
     }
