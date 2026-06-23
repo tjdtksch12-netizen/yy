@@ -247,12 +247,12 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
         <div class="memo-row">
           <div class="memo-wrap">
             <div class="memo-label">메모 1</div>
-            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>
+            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1, event)"></div>
             <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." style="display:none;"></textarea>
           </div>
           <div class="memo-wrap">
             <div class="memo-label">메모 2</div>
-            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>
+            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2, event)"></div>
             <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." style="display:none;"></textarea>
           </div>
         </div>
@@ -405,6 +405,29 @@ window.exportToExcel = exportToExcel;
 window.openPwModal = openPwModal;
 window.closePwModal = closePwModal;
 
+// ✨ 마우스 클릭 지점의 글자 인덱스를 계산해 주는 함수
+function getCaretCharacterOffsetWithin(element, x, y) {
+  let caretOffset = 0;
+  let range;
+  if (typeof document.caretRangeFromPoint === "function") {
+    range = document.caretRangeFromPoint(x, y);
+  } else if (typeof document.caretPositionFromPoint === "function") {
+    const pos = document.caretPositionFromPoint(x, y);
+    if (pos) {
+      range = document.createRange();
+      range.setStart(pos.offsetNode, pos.offset);
+      range.collapse(true);
+    }
+  }
+  if (range) {
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    caretOffset = preCaretRange.toString().length;
+  }
+  return caretOffset;
+}
+
 // ✨ 관리 메뉴 열기/닫기 처리 로직
 document.getElementById('btn-manage-menu').onclick = (e) => {
   e.stopPropagation();
@@ -515,18 +538,16 @@ async function fetchAndSaveCalendarEvents(showAlert = false) {
       if(showAlert) alert("새롭게 추가된 일정이 없습니다."); 
     }
     
-    // ✨ 동기화 성공 날짜 기록
     localStorage.setItem('last_cal_sync_date', Date.now());
   } catch (err) { 
     if(showAlert) alert("캘린더 통신 실패: " + err.message); 
   }
 }
 
-// ✨ 일주일마다 자동 캘린더 연동 체크 (백그라운드 실행)
 function checkAutoSyncCalendar() {
   const lastSync = localStorage.getItem('last_cal_sync_date');
   const now = Date.now();
-  const oneWeek = 7 * 24 * 60 * 60 * 1000; // 7일
+  const oneWeek = 7 * 24 * 60 * 60 * 1000; 
 
   if (!lastSync || (now - parseInt(lastSync)) > oneWeek) {
     let attempts = 0;
@@ -537,10 +558,8 @@ function checkAutoSyncCalendar() {
         tokenClient.callback = async (resp) => { 
           if (resp.error === undefined) await fetchAndSaveCalendarEvents(false); 
         };
-        // 동의 화면 없이 조용히 토큰 요청
         tokenClient.requestAccessToken({prompt: ''}); 
       } else if (attempts > 15) {
-        // 15초 이상 기다려도 로드 안 되면 포기 (앱 멈춤 방지)
         clearInterval(checkReady);
       }
     }, 1000);
@@ -556,16 +575,13 @@ function syncWithFirebase() {
       initialLoadDone = true;
       setTimeout(() => {
         if (window.innerWidth > 768) { 
-          // PC 화면: 오늘 날짜 커서
           goToToday(); 
         } else { 
-          // 모바일 화면: 첫 번째 메모 오픈 후 커서를 맨 앞으로 이동 및 화면 맨 위 고정
           window.openMemo(1);
-          const memoEdit = document.getElementById('memo-edit-1');
-          if (memoEdit) {
-            memoEdit.setSelectionRange(0, 0); // 텍스트 맨 앞으로 커서 이동
-            memoEdit.scrollTop = 0; // 텍스트 에어리어 내부 스크롤 상단 고정
-            window.scrollTo(0, 0); // 전체 브라우저 화면 상단 고정
+          const memoEdit1 = document.getElementById('memo-edit-1');
+          if (memoEdit1) {
+            memoEdit1.setSelectionRange(0, 0); 
+            memoEdit1.scrollTop = 0; 
           }
         }
       }, 150);
@@ -589,14 +605,33 @@ document.getElementById('btn-reading-mode').onclick = () => {
   executeSearch(false);
 };
 
-window.openMemo = function(num) {
-  const disp = document.getElementById(`memo-disp-${num}`); const edit = document.getElementById(`memo-edit-${num}`);
-  disp.style.display = 'none'; edit.style.display = 'block'; edit.value = memoData[num]; edit.focus();
+// ✨ 메모 오픈 시, 마우스를 클릭한 위치를 찾아서 커서를 이동시키는 로직 반영
+window.openMemo = function(num, event) {
+  const disp = document.getElementById(`memo-disp-${num}`); 
+  const edit = document.getElementById(`memo-edit-${num}`);
+  
+  // 클릭한 글자의 인덱스를 찾음
+  let clickIndex = -1;
+  if (event && event.clientX && event.clientY) {
+    clickIndex = getCaretCharacterOffsetWithin(disp, event.clientX, event.clientY);
+  }
+
+  disp.style.display = 'none'; 
+  edit.style.display = 'block'; 
+  edit.value = memoData[num]; 
+  edit.focus();
+
+  // 커서를 클릭했던 인덱스 위치로 정확히 이동
+  if (clickIndex !== -1) {
+    edit.setSelectionRange(clickIndex, clickIndex);
+  }
 };
+
 window.closeMemo = function(num) {
   const disp = document.getElementById(`memo-disp-${num}`); const edit = document.getElementById(`memo-edit-${num}`);
   edit.style.display = 'none'; disp.style.display = 'block'; executeSearch(false); 
 };
+
 [1, 2].forEach(num => {
   const edit = document.getElementById(`memo-edit-${num}`);
   edit.oninput = (e) => { memoData[num] = e.target.value; set(ref(db, `memos/memo${num}`), e.target.value); }; edit.onblur = () => closeMemo(num);
@@ -915,7 +950,6 @@ function handlePwInput() {
   else if (pwStep === 3) { if (pwInputs[3] !== newPw) showPwError(3, '비밀번호가 일치하지 않습니다'); else { localStorage.setItem(PW_KEY, newPw); closePwModal(); showToast('비밀번호 변경 완료 🔑'); } }
 }
 
-// ✨ 앱 시작 시 파이어베이스 통신과 동시에 캘린더 자동 동기화 체크 실행
 window.startFirebaseApp = function() { 
   syncWithFirebase(); 
   checkAutoSyncCalendar(); 
