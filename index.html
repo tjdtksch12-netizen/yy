@@ -654,10 +654,11 @@ function buildTable() {
       const tr = document.createElement('tr'); tr.className = `day-row month-${m}`;
       if (m !== new Date().getMonth() + 1) tr.classList.add('collapsed-row');
       
+      // ✨ 셀(td) 자체에 더블클릭 이벤트 추가
       let rowHtml = `<td class="date-cell" onclick="toggleRowExpand(this.parentElement, event)"><span class="date-label">${m}/${d}</span></td>`;
       YEARS.forEach(y => {
         const key = `${y}-${m}-${d}`;
-        rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}">
+        rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}" ondblclick="openReadingIfHidden('${key}', event)">
           <div class="entry-container">
             <div class="calendar-part" id="cal-box-${key}"></div>
             <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)">
@@ -683,6 +684,32 @@ window.openCell = function(td) {
   const key = td.dataset.key;
   const diaryPart = td.querySelector('.diary-part');
   if (diaryPart) openSection(diaryPart, 'diary', key, null);
+};
+
+// ✨ 숨겨진 과거 독서 기록을 더블클릭으로 여는 기능
+window.openReadingIfHidden = function(key, event) {
+  // 사용자가 일기장 텍스트 영역 내부의 특정 글씨나 단어를 드래그/선택하기 위해 더블클릭한 경우라면 무시 (정상 작동 보장)
+  if (event && event.target && event.target.tagName.toLowerCase() === 'textarea') {
+    const ta = event.target;
+    if (ta.selectionStart !== ta.selectionEnd) return;
+  }
+  
+  // 일반 텍스트 모드에서 드래그 중인 경우도 무시
+  const selection = window.getSelection();
+  if (selection && selection.toString().trim().length > 0) return; 
+  
+  const targetTd = document.querySelector(`td[data-key="${key}"]`);
+  if (!targetTd) return;
+  
+  const rPart = targetTd.querySelector('.reading-part');
+  
+  // 독서기록이 빈칸이라 숨겨진 상태(.empty-past)일 때, 빈 공간을 더블클릭하면 발동
+  if (rPart && rPart.classList.contains('empty-past')) {
+    if (activeEditor) closeEditor(); // 방금 1번 클릭으로 인해 열렸던 일기장 닫기
+    rPart.classList.remove('empty-past'); // 독서 기록 숨김 해제
+    // 닫힘/열림 애니메이션이 엉키지 않도록 살짝 지연 후 오픈
+    setTimeout(() => { openSection(rPart, 'reading', key, null); }, 10);
+  }
 };
 
 window.toggleYear = function(y) {
@@ -741,7 +768,6 @@ function executeSearch(isNext = false) {
   lastSearchQuery = query; currentMarkIdx = 0;
   const dayRows = document.querySelectorAll('.day-row'); const monthDividers = document.querySelectorAll('.month-divider');
 
-  // ✨ 오늘 날짜 구하기
   const _now = new Date();
   const todayKey = `${_now.getFullYear()}-${_now.getMonth() + 1}-${_now.getDate()}`;
 
@@ -760,9 +786,8 @@ function executeSearch(isNext = false) {
       if (rOrig.trim() !== '') hasReadingInRow = true;
 
       const dSpan = td.querySelector('.diary-part .cell-text'); const rSpan = td.querySelector('.reading-part .cell-text'); const cDiv = td.querySelector('.calendar-part');
-      const rPart = td.querySelector('.reading-part'); // ✨ 독서 기록 영역 가져오기
+      const rPart = td.querySelector('.reading-part'); 
 
-      // ✨ 독서 기록이 비어있고, 오늘 날짜가 아니면 숨기기 클래스 추가
       if (rOrig.trim() === '' && key !== todayKey) {
         rPart.classList.add('empty-past');
       } else {
