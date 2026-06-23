@@ -395,6 +395,10 @@ let lastSearchQuery = '';
 let currentMarkIdx = 0;
 let isReadingMode = false; 
 
+// ✨ 커스텀 더블클릭 구현을 위한 변수 추가
+let lastClickTime = 0;
+let lastClickKey = '';
+
 let collapsedYears = [];
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
@@ -406,7 +410,6 @@ window.exportToExcel = exportToExcel;
 window.openPwModal = openPwModal;
 window.closePwModal = closePwModal;
 
-// ✨ 마우스 클릭 지점의 글자 인덱스를 계산해 주는 함수
 function getCaretCharacterOffsetWithin(element, x, y) {
   let caretOffset = 0;
   let range;
@@ -429,7 +432,6 @@ function getCaretCharacterOffsetWithin(element, x, y) {
   return caretOffset;
 }
 
-// ✨ 관리 메뉴 열기/닫기 처리 로직
 document.getElementById('btn-manage-menu').onclick = (e) => {
   e.stopPropagation();
   document.getElementById('manage-dropdown-content').classList.toggle('show');
@@ -654,11 +656,11 @@ function buildTable() {
       const tr = document.createElement('tr'); tr.className = `day-row month-${m}`;
       if (m !== new Date().getMonth() + 1) tr.classList.add('collapsed-row');
       
-      // ✨ 셀(td) 자체에 더블클릭 이벤트 추가
       let rowHtml = `<td class="date-cell" onclick="toggleRowExpand(this.parentElement, event)"><span class="date-label">${m}/${d}</span></td>`;
       YEARS.forEach(y => {
         const key = `${y}-${m}-${d}`;
-        rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}" ondblclick="openReadingIfHidden('${key}', event)">
+        // ✨ HTML 템플릿에 있던 원시적인 ondblclick 속성 제거 (완벽한 JS 제어를 위해)
+        rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}">
           <div class="entry-container">
             <div class="calendar-part" id="cal-box-${key}"></div>
             <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)">
@@ -674,42 +676,17 @@ function buildTable() {
     }
   });
 
-  document.querySelectorAll('.entry-cell').forEach(td => { td.onclick = () => openCell(td); });
+  // ✨ 이벤트 리스너에 event(e) 파라미터가 정확히 넘어가도록 수정
+  document.querySelectorAll('.entry-cell').forEach(td => { td.onclick = (e) => openCell(td, e); });
   applyCollapsedYears();
 }
 
-window.openCell = function(td) {
+window.openCell = function(td, e) {
   const y = parseInt(td.dataset.year);
   if (collapsedYears.includes(y)) { toggleYear(y); return; }
   const key = td.dataset.key;
   const diaryPart = td.querySelector('.diary-part');
-  if (diaryPart) openSection(diaryPart, 'diary', key, null);
-};
-
-// ✨ 숨겨진 과거 독서 기록을 더블클릭으로 여는 기능
-window.openReadingIfHidden = function(key, event) {
-  // 사용자가 일기장 텍스트 영역 내부의 특정 글씨나 단어를 드래그/선택하기 위해 더블클릭한 경우라면 무시 (정상 작동 보장)
-  if (event && event.target && event.target.tagName.toLowerCase() === 'textarea') {
-    const ta = event.target;
-    if (ta.selectionStart !== ta.selectionEnd) return;
-  }
-  
-  // 일반 텍스트 모드에서 드래그 중인 경우도 무시
-  const selection = window.getSelection();
-  if (selection && selection.toString().trim().length > 0) return; 
-  
-  const targetTd = document.querySelector(`td[data-key="${key}"]`);
-  if (!targetTd) return;
-  
-  const rPart = targetTd.querySelector('.reading-part');
-  
-  // 독서기록이 빈칸이라 숨겨진 상태(.empty-past)일 때, 빈 공간을 더블클릭하면 발동
-  if (rPart && rPart.classList.contains('empty-past')) {
-    if (activeEditor) closeEditor(); // 방금 1번 클릭으로 인해 열렸던 일기장 닫기
-    rPart.classList.remove('empty-past'); // 독서 기록 숨김 해제
-    // 닫힘/열림 애니메이션이 엉키지 않도록 살짝 지연 후 오픈
-    setTimeout(() => { openSection(rPart, 'reading', key, null); }, 10);
-  }
+  if (diaryPart) openSection(diaryPart, 'diary', key, e);
 };
 
 window.toggleYear = function(y) {
@@ -733,14 +710,54 @@ window.toggleRowExpand = function(rowEl, event) {
   if (isExpanded) rowEl.classList.remove('expanded-row'); else rowEl.classList.add('expanded-row');
 }
 
+// ✨ 정교한 JS 기반 더블클릭 감지 및 기존 로직 통합
 window.openSection = function(sectionEl, type, key, event) {
   if (event) event.stopPropagation();
 
+  // 사용자가 일반 텍스트를 마우스로 길게 드래그(선택) 중이면 무시
   const selection = window.getSelection();
-  if (selection && selection.toString().length > 0) return; 
+  if (selection && selection.toString().trim().length > 0) return; 
+
+  // 입력창(textarea) 안에서 단어를 더블클릭해서 복사/수정하려는 거라면 무시 (정상 작동 보장)
+  if (event && event.target && event.target.tagName.toLowerCase() === 'textarea') {
+    const ta = event.target;
+    if (ta.selectionStart !== ta.selectionEnd) return;
+  }
+
+  // 시간차를 계산하여 더블클릭 감지 (350ms 기준)
+  const now = Date.now();
+  const isDoubleClick = (key === lastClickKey && now - lastClickTime < 350);
+  lastClickTime = now;
+  lastClickKey = key;
 
   if (sectionEl.closest('td').classList.contains('collapsed-year')) { toggleYear(parseInt(sectionEl.closest('td').dataset.year)); return; }
-  if (activeEditor) closeEditor();
+
+  // ✨ 더블클릭 이벤트 발생 시: 숨겨져 있던 과거 독서 기록을 나타나게 함
+  if (isDoubleClick) {
+    const targetTd = document.querySelector(`td[data-key="${key}"]`);
+    if (targetTd) {
+      const rPart = targetTd.querySelector('.reading-part');
+      if (rPart && rPart.classList.contains('empty-past')) {
+        // 방금 1번째 클릭 때문에 열렸던 일기장(activeEditor)을 다시 강제 종료
+        if (activeEditor) closeEditor(); 
+        
+        // 독서 기록 숨김 클래스 제거
+        rPart.classList.remove('empty-past');
+        rPart.style.display = ''; // CSS 원복
+        
+        // 충돌 방지를 위해 0.01초 지연 후 독서 기록 입력창 오픈
+        setTimeout(() => { openSection(rPart, 'reading', key, null); }, 10);
+        return; // 여기서 함수를 끝내어 아래쪽의 일기장 오픈 로직 실행을 막음
+      }
+    }
+  }
+
+  // 일반 클릭 처리 (이미 에디터가 켜져 있다면)
+  if (activeEditor) {
+    // 내가 지금 누른 곳이 방금 켠 바로 그 에디터라면, 재부팅하지 않고 그대로 둠
+    if (activeEditor.key === key && activeEditor.type === type) return;
+    closeEditor();
+  }
   
   const isReading = (type === 'reading'); const text = isReading ? (readingEntries[key] || '') : (entries[key] || '');
   const span = sectionEl.querySelector('.cell-text'); if(span) span.style.display = 'none';
