@@ -146,6 +146,7 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
 .reading-part { border-top: 1px solid #e5e5e5; background: #fdfdfd; padding: 6px 12px; cursor: text; min-height: 32px; transition: all 0.2s;}
 .reading-part .cell-text:empty::before { content: '📖 독서 기록...'; color: #ccc; font-size: 11px;}
 .reading-part:hover { background: #f0f8ff; }
+.reading-part.empty-past { display: none !important; } /* ✨ 내용 없는 과거 독서기록 숨김 처리 */
 .cell-text { display: block; font-size: 14px; line-height: 1.6; white-space: pre-wrap; min-height: 20px; word-break: break-all; }
 .cell-textarea { width: 100%; display: block; border: 2px solid #111111; padding: 10px; font-size: 14px; line-height: 1.6; resize: none; overflow: hidden; }
 
@@ -605,12 +606,10 @@ document.getElementById('btn-reading-mode').onclick = () => {
   executeSearch(false);
 };
 
-// ✨ 메모 오픈 시, 마우스를 클릭한 위치를 찾아서 커서를 이동시키는 로직 반영
 window.openMemo = function(num, event) {
   const disp = document.getElementById(`memo-disp-${num}`); 
   const edit = document.getElementById(`memo-edit-${num}`);
   
-  // 클릭한 글자의 인덱스를 찾음
   let clickIndex = -1;
   if (event && event.clientX && event.clientY) {
     clickIndex = getCaretCharacterOffsetWithin(disp, event.clientX, event.clientY);
@@ -621,7 +620,6 @@ window.openMemo = function(num, event) {
   edit.value = memoData[num]; 
   edit.focus();
 
-  // 커서를 클릭했던 인덱스 위치로 정확히 이동
   if (clickIndex !== -1) {
     edit.setSelectionRange(clickIndex, clickIndex);
   }
@@ -743,6 +741,10 @@ function executeSearch(isNext = false) {
   lastSearchQuery = query; currentMarkIdx = 0;
   const dayRows = document.querySelectorAll('.day-row'); const monthDividers = document.querySelectorAll('.month-divider');
 
+  // ✨ 오늘 날짜 구하기
+  const _now = new Date();
+  const todayKey = `${_now.getFullYear()}-${_now.getMonth() + 1}-${_now.getDate()}`;
+
   [1, 2].forEach(num => {
     const disp = document.getElementById(`memo-disp-${num}`); const text = memoData[num] || '';
     if (query && text.toLowerCase().includes(query)) { disp.innerHTML = escHtml(text).replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>'); disp.classList.add('memo-match'); } 
@@ -758,6 +760,14 @@ function executeSearch(isNext = false) {
       if (rOrig.trim() !== '') hasReadingInRow = true;
 
       const dSpan = td.querySelector('.diary-part .cell-text'); const rSpan = td.querySelector('.reading-part .cell-text'); const cDiv = td.querySelector('.calendar-part');
+      const rPart = td.querySelector('.reading-part'); // ✨ 독서 기록 영역 가져오기
+
+      // ✨ 독서 기록이 비어있고, 오늘 날짜가 아니면 숨기기 클래스 추가
+      if (rOrig.trim() === '' && key !== todayKey) {
+        rPart.classList.add('empty-past');
+      } else {
+        rPart.classList.remove('empty-past');
+      }
 
       if (cOrig.trim() !== '') {
         cDiv.style.display = 'block';
