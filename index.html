@@ -609,22 +609,28 @@ document.getElementById('btn-reading-mode').onclick = () => {
 };
 
 window.openMemo = function(num, event) {
-  const disp = document.getElementById(`memo-disp-${num}`); 
+  const disp = document.getElementById(`memo-disp-${num}`);
   const edit = document.getElementById(`memo-edit-${num}`);
-  
+
   let clickIndex = -1;
   if (event && event.clientX && event.clientY) {
     clickIndex = getCaretCharacterOffsetWithin(disp, event.clientX, event.clientY);
   }
 
-  disp.style.display = 'none'; 
-  edit.style.display = 'block'; 
-  edit.value = memoData[num]; 
+  // ✨ 1. 화면이 전환되기 전, 현재 메모장의 스크롤 위치를 저장합니다.
+  const currentScrollTop = disp.scrollTop;
+
+  disp.style.display = 'none';
+  edit.style.display = 'block';
+  edit.value = memoData[num];
   edit.focus();
 
   if (clickIndex !== -1) {
     edit.setSelectionRange(clickIndex, clickIndex);
   }
+
+  // ✨ 2. 저장해둔 스크롤 위치를 텍스트 입력창에 그대로 적용합니다.
+  edit.scrollTop = currentScrollTop;
 };
 
 window.closeMemo = function(num) {
