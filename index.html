@@ -37,9 +37,11 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 /* ✨ 캘린더 개별 삭제 버튼 관련 디자인 */.cal-event-line {  display: flex; justify-content: space-between; align-items: flex-start;  margin-bottom: 4px;}.cal-event-line:last-child { margin-bottom: 0; }.cal-event-text {  flex: 1; font-size: calc(var(--diary-fs) - 2px); color: #1967d2; font-weight: 700;  white-space: pre-wrap; word-break: break-all;}.cal-del-btn {  cursor: pointer; color: #888; font-size: 10px; padding: 2px 5px;  border-radius: 4px; background: #e0e0e0; transition: all 0.2s;  white-space: nowrap; margin-left: 6px; user-select: none;}.cal-del-btn:hover { background: #ffcdd2; color: #d32f2f; }
 
 /* 2️⃣ 중단: 일기 칸 */.diary-part {  flex: 1; padding: 12px; cursor: text; min-height: 50px;}
+/* 3️⃣ 하단: 독서 기록 칸 */.reading-part {  border-top: 1px solid #e5e5e5; background: #fdfdfd;  padding: 6px 12px; cursor: text; min-height: 32px; transition: all 0.2s;}.reading-part .cell-text:empty::before {  content: '📖 독서 기록...'; color: #ccc; font-size: 11px;}.reading-part:hover { background: #f0f8ff; }
 
 .cell-text { display: block; font-size: var(--diary-fs); line-height: 1.6; white-space: pre-wrap; min-height: 20px; word-break: break-all; }.cell-textarea { width: 100%; display: block; border: 2px solid #111111; padding: 10px; font-size: var(--diary-fs); line-height: 1.6; resize: none; overflow: hidden; }
 
+/* 📚 독서 모드 활성화 시 레이아웃 제어 */#table-wrap.reading-mode-active .diary-part, #table-wrap.reading-mode-active .calendar-part { display: none !important; }#table-wrap.reading-mode-active .reading-part { border-top: none; background: #ffffff; min-height: 100px; padding: 12px; }#table-wrap.reading-mode-active td.entry-cell { background: #f4fbff; }
 .month-divider { background: #e0e0e0; cursor: pointer; }.month-divider td { padding: 10px; font-weight: 700; border-bottom: 2px solid #111111; }.collapsed-row { display: none; }
 
 #toast {  position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff;  padding: 10px 20px; border-radius: 30px; opacity: 0; transition: 0.3s;  pointer-events: none; z-index: 300; font-size: 14px;}#toast.show { opacity: 1; }
@@ -59,6 +61,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   /* ✨ 모바일 버튼 3열 레이아웃 최적화 */
   .header-btns { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; min-width: unset; }  
   .hbtn { padding: 8px 5px; font-size: 11px; }  
+  #btn-reading-mode { grid-column: span 3; }
   /* 하단 오늘쓰기와 전체보기 버튼 그리드 병합 조절 */
   #btn-today { grid-column: span 1; }
   #btn-toggle-years { grid-column: span 2; padding: 10px; }  
@@ -68,6 +71,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   #table-wrap.fullscreen-table { max-height: 100vh !important; }  
   td.entry-cell { width: 160px; }  
   .diary-part { padding: 8px; }  
+  .reading-part { padding: 6px 8px; }  
   .day-row.expanded-row td { height: 320px !important; }  
   td.entry-cell.collapsed-year { width: 36px !important; min-width: 36px !important; }
 }
@@ -123,7 +127,8 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
             </div>
           </div>
 
-          <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>          <button class="hbtn dark-gray" id="btn-clean-calendar">🧹 캘린더 지우기</button>          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn gray"   onclick="location.reload()">🔒 앱 잠금</button>          <button class="hbtn orange" onclick="goToToday()" id="btn-today">🎯 오늘 일기 쓰기</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력... (엔터시 다음)">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
+          <button class="hbtn teal"   id="btn-reading-mode">📚 독서 기록 모아보기</button>
+          <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>          <button class="hbtn dark-gray" id="btn-clean-calendar">🧹 캘린더 지우기</button>          <button class="hbtn green"  id="btn-export">📥 엑셀 저장</button>          <button class="hbtn blue"   id="btn-import-trigger">📤 엑셀 불러오기</button>          <button class="hbtn gold"   id="btn-open-pw">🔑 패스워드 변경</button>          <button class="hbtn gray"   onclick="location.reload()">🔒 앱 잠금</button>          <button class="hbtn orange" onclick="goToToday()" id="btn-today">🎯 오늘 일기 쓰기</button>          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>          <div class="side-search-block">            <input type="text" id="search-input" class="side-search-input" placeholder="검색어 입력... (엔터시 다음)">            <button class="hbtn search-btn" id="btn-search-click">🔍 일기/독서 검색</button>          </div>        </div>      </div>      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">    </div>  </div>  <div id="table-wrap">    <table id="diary-table">      <thead id="table-head"></thead>      <tbody id="table-body"></tbody>    </table>  </div></div>
 <div id="confirm-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">⚠️</div>    <div class="modal-title">기존 데이터를 덮어쓸까요?</div>    <div class="modal-desc">엑셀 파일을 불러오면 <strong>현재 저장된 모든 내용이<br>파일 내용으로 교체</strong>됩니다.</div>    <div class="modal-file-name" id="modal-file-name"></div>    <div class="modal-btns">      <button class="modal-btn cancel"  id="btn-import-cancel">취소</button>      <button class="modal-btn primary" id="btn-import-confirm">불러오기</button>    </div>  </div></div>
 <div id="pw-modal" class="modal-overlay">  <div class="modal-box">    <div class="modal-icon">🔑</div>    <div class="modal-title">비밀번호 변경</div>
     <div class="pw-step-label">      <span id="pws-1" class="on">① 현재</span>      <span id="pws-2">② 새 비밀번호</span>      <span id="pws-3">③ 확인</span>    </div>
@@ -162,6 +167,7 @@ const DAYS = ['일','월','화','수','목','금','토'];
 const PW_KEY = 'diary_pw';
 
 let entries = {};
+let readingEntries = {}; 
 let calendarEntries = {}; 
 let deletedCalendarEvents = {}; 
 let memoData = { 1: '', 2: '' };
@@ -170,12 +176,13 @@ let pendingImportData = null;
 
 let lastSearchQuery = '';
 let currentMarkIdx = 0;
+let isReadingMode = false;
 
 let collapsedYears = [];
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 
-let dataLoaded = { diary: false, calendar: false, deletedCal: false };
+let dataLoaded = { diary: false, reading: false, calendar: false, deletedCal: false };
 let initialLoadDone = false; 
 
 // ✨ 글씨 크기 초기화 및 적용 로직
@@ -303,7 +310,7 @@ function syncWithFirebase() {
     buildTable(); 
     executeSearch(false); 
     
-    if (!initialLoadDone && dataLoaded.diary && dataLoaded.calendar && dataLoaded.deletedCal) {
+    if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
       initialLoadDone = true;
       setTimeout(() => {
         if (window.innerWidth > 768) {
@@ -316,6 +323,7 @@ function syncWithFirebase() {
   };
   
   onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.diary = true; triggerRender(); });
+  onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.reading = true; triggerRender(); });
   onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.calendar = true; triggerRender(); });
   onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.deletedCal = true; triggerRender(); });
 
@@ -323,6 +331,13 @@ function syncWithFirebase() {
     if (snapshot.exists()) { const data = snapshot.val(); memoData[1] = data.memo1 || ''; memoData[2] = data.memo2 || ''; executeSearch(false); }
   }).catch(err => console.warn(err));
 }
+
+document.getElementById('btn-reading-mode').onclick = () => {
+  isReadingMode = !isReadingMode; const btn = document.getElementById('btn-reading-mode'); const tableWrap = document.getElementById('table-wrap');
+  if (isReadingMode) { btn.textContent = '📖 전체 일기 보기'; btn.classList.replace('teal', 'gray'); tableWrap.classList.add('reading-mode-active'); } 
+  else { btn.textContent = '📚 독서 기록 모아보기'; btn.classList.replace('gray', 'teal'); tableWrap.classList.remove('reading-mode-active'); }
+  executeSearch(false);
+};
 
 window.openMemo = function(num) {
   const disp = document.getElementById(`memo-disp-${num}`); const edit = document.getElementById(`memo-edit-${num}`);
@@ -362,7 +377,10 @@ function buildTable() {
         rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}">
           <div class="entry-container">
             <div class="calendar-part" id="cal-box-${key}"></div>
-            <div class="diary-part" onclick="openSection(this, '${key}', event)">
+            <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)">
+              <span class="cell-text"></span>
+            </div>
+            <div class="reading-part" onclick="openSection(this, 'reading', '${key}', event)">
               <span class="cell-text"></span>
             </div>
           </div>
@@ -397,26 +415,28 @@ window.toggleRowExpand = function(rowEl, event) {
   if (isExpanded) rowEl.classList.remove('expanded-row'); else rowEl.classList.add('expanded-row');
 }
 
-window.openSection = function(sectionEl, key, event) {
+window.openSection = function(sectionEl, type, key, event) {
   if (event) event.stopPropagation();
   if (sectionEl.closest('td').classList.contains('collapsed-year')) { toggleYear(parseInt(sectionEl.closest('td').dataset.year)); return; }
   if (activeEditor) closeEditor();
   
-  const text = entries[key] || '';
+  const isReading = (type === 'reading'); const text = isReading ? (readingEntries[key] || '') : (entries[key] || '');
   const span = sectionEl.querySelector('.cell-text'); if(span) span.style.display = 'none';
   
   const ta = document.createElement('textarea'); ta.className = 'cell-textarea'; ta.value = text;
-  ta.placeholder = '오늘의 일기 기록 중...';
+  ta.placeholder = isReading ? '📚 읽은 도서 감상평 기록...' : '오늘의 일기 기록 중...';
+  if (isReading) ta.style.backgroundColor = '#fdfdfd';
   
   sectionEl.appendChild(ta); ta.focus();
   const res = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
   ta.oninput = res; res();
-  activeEditor = { sectionEl, ta, span, key }; ta.onblur = () => closeEditor();
+  activeEditor = { sectionEl, ta, span, type, key }; ta.onblur = () => closeEditor();
 }
 
 window.closeEditor = function() {
-  if (!activeEditor) return; const { sectionEl, ta, span, key } = activeEditor; const val = ta.value.trim();
-  if (val !== (entries[key] || '')) { entries[key] = val; set(ref(db, 'diary_data/' + key), val).then(() => showToast('일기 저장 ✓')); }
+  if (!activeEditor) return; const { sectionEl, ta, span, type, key } = activeEditor; const val = ta.value.trim();
+  if (type === 'diary') { if (val !== (entries[key] || '')) { entries[key] = val; set(ref(db, 'diary_data/' + key), val).then(() => showToast('일기 저장 ✓')); } } 
+  else { if (val !== (readingEntries[key] || '')) { readingEntries[key] = val; set(ref(db, 'reading_data/' + key), val).then(() => showToast('독서 저장 ✓')); } }
   if(span) span.style.display = 'block'; ta.remove(); activeEditor = null; executeSearch(false);
 }
 
@@ -435,11 +455,12 @@ function executeSearch(isNext = false) {
   const activeMonths = new Set(); let matchedYears = new Set();
 
   dayRows.forEach(row => {
-    let hasMatch = false;
+    let hasMatch = false; let hasReadingInRow = false;
     row.querySelectorAll('.entry-cell').forEach(td => {
-      const key = td.dataset.key; const dOrig = entries[key] || ''; const cOrig = calendarEntries[key] || '';
+      const key = td.dataset.key; const dOrig = entries[key] || ''; const rOrig = readingEntries[key] || ''; const cOrig = calendarEntries[key] || '';
+      if (rOrig.trim() !== '') hasReadingInRow = true;
 
-      const dSpan = td.querySelector('.diary-part .cell-text'); const cDiv = td.querySelector('.calendar-part');
+      const dSpan = td.querySelector('.diary-part .cell-text'); const rSpan = td.querySelector('.reading-part .cell-text'); const cDiv = td.querySelector('.calendar-part');
 
       if (cOrig.trim() !== '') {
         cDiv.style.display = 'block';
@@ -459,17 +480,20 @@ function executeSearch(isNext = false) {
 
       if (dOrig.toLowerCase().includes(query) && query !== '') { hasMatch = true; matchedYears.add(parseInt(td.dataset.year)); if(dSpan) dSpan.innerHTML = escHtml(dOrig).replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>'); } 
       else { if(dSpan) dSpan.innerHTML = escHtml(dOrig); }
+
+      if (rOrig.toLowerCase().includes(query) && query !== '') { hasMatch = true; matchedYears.add(parseInt(td.dataset.year)); if(rSpan) rSpan.innerHTML = '📚 ' + escHtml(rOrig).replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>'); } 
+      else { if(rSpan) rSpan.innerHTML = rOrig ? '📚 ' + escHtml(rOrig) : ''; }
     });
 
-    let shouldShow = query ? hasMatch : true;
-    if (shouldShow) { row.style.display = ''; if (query) row.classList.remove('collapsed-row'); activeMonths.add(row.className.match(/month-(\d+)/)[1]); } 
+    let shouldShow = isReadingMode ? (query ? (hasMatch && hasReadingInRow) : hasReadingInRow) : (query ? hasMatch : true);
+    if (shouldShow) { row.style.display = ''; if (query || isReadingMode) row.classList.remove('collapsed-row'); activeMonths.add(row.className.match(/month-(\d+)/)[1]); } 
     else row.style.display = 'none';
   });
 
   monthDividers.forEach(div => { div.style.display = activeMonths.has(div.getAttribute('data-month')) ? '' : 'none'; });
   if (matchedYears.size > 0) { matchedYears.forEach(y => { if (collapsedYears.includes(y)) collapsedYears = collapsedYears.filter(cy => cy !== y); }); applyCollapsedYears(); }
 
-  if (!query) {
+  if (!query && !isReadingMode) {
     monthDividers.forEach(div => div.style.display = '');
     dayRows.forEach(row => { row.style.display = ''; const m = parseInt(row.className.match(/month-(\d+)/)[1]); if (m === new Date().getMonth() + 1) row.classList.remove('collapsed-row'); else row.classList.add('collapsed-row'); });
   }
@@ -490,13 +514,14 @@ document.getElementById('search-input').oninput = () => executeSearch(false);
 document.getElementById('btn-search-click').onclick = () => executeSearch(true);
 document.getElementById('search-input').onkeydown = (e) => { if (e.key === 'Enter') executeSearch(true); };
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function toggleMonth(m) { if(document.getElementById('search-input').value.trim()) return; document.querySelectorAll(`.month-${m}`).forEach(r => r.classList.toggle('collapsed-row')); }
+function toggleMonth(m) { if(document.getElementById('search-input').value.trim() || isReadingMode) return; document.querySelectorAll(`.month-${m}`).forEach(r => r.classList.toggle('collapsed-row')); }
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
 
 window.goToToday = function() {
   const searchInput = document.getElementById('search-input');
   if (searchInput.value.trim() !== '') { searchInput.value = ''; }
-  executeSearch(false);
+  if (isReadingMode) { document.getElementById('btn-reading-mode').click(); } 
+  else { executeSearch(false); }
 
   const now = new Date(); const y = now.getFullYear(); const m = now.getMonth() + 1; const d = now.getDate(); const key = `${y}-${m}-${d}`;
   if (collapsedYears.includes(y)) toggleYear(y);
@@ -508,7 +533,7 @@ window.goToToday = function() {
       if (monthRows.length > 0 && monthRows[0].classList.contains('collapsed-row')) toggleMonth(m);
       
       const targetDiaryPart = targetTd.querySelector('.diary-part'); 
-      if(targetDiaryPart) openSection(targetDiaryPart, key, null);
+      if(targetDiaryPart) openSection(targetDiaryPart, 'diary', key, null);
       
       targetTd.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -516,7 +541,7 @@ window.goToToday = function() {
 };
 
 function focusToday() {
-  if(document.getElementById('search-input').value.trim()) return;
+  if(document.getElementById('search-input').value.trim() || isReadingMode) return;
   const now = new Date(); const y = now.getFullYear(); const m = now.getMonth() + 1; const d = now.getDate(); const key = `${y}-${m}-${d}`;
   if (collapsedYears.includes(y)) toggleYear(y);
   const targetTd = document.querySelector(`td[data-key="${key}"]`);   
@@ -536,6 +561,7 @@ function exportToExcel() {
         const key = `${y}-${m}-${d}`; let cellContent = '';
         if (calendarEntries[key]) cellContent += `[🗓️ 일정]\n${calendarEntries[key]}\n\n`;
         cellContent += entries[key] || '';
+        if (readingEntries[key]) cellContent += (cellContent ? '\n\n[📚 독서 기록]\n' : '[📚 독서 기록]\n') + readingEntries[key];
         row.push(cellContent);
       });
       sheetData.push(row);
