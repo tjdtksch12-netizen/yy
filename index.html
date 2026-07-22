@@ -137,24 +137,24 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// [보안 조치 완료] 배포용 더미 데이터입니다.
+// ✨ 선생님의 원래 파이어베이스 키 (본인 전용)
 const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyAotiA_X_gMBGNnuSuiXezNK19Qxtgy6ro",
+  authDomain: "diary-f82d2.firebaseapp.com",
+  databaseURL: "https://diary-f82d2-default-rtdb.firebaseio.com",
+  projectId: "diary-f82d2",
+  storageBucket: "diary-f82d2.firebasestorage.app",
+  messagingSenderId: "84875232611",
+  appId: "1:84875232611:web:4bd20877788cb5fdd93f56",
+  measurementId: "G-2ZBMSPNBGG"
 };
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 
-// [보안 조치 완료] 배포용 더미 데이터입니다.
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY';
+// ✨ 선생님의 원래 구글 클라우드 키 (본인 전용)
+const GOOGLE_CLIENT_ID = '641946222063-seeq6pj5vr09bv4qhh9ju5nf8rq3agea.apps.googleusercontent.com';
+const GOOGLE_API_KEY = 'AIzaSyBEu0o3ExTILQHYzS7RORowlEYpTA4uQac';
 
 const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033];
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12];
@@ -608,14 +608,7 @@ function handlePwInput() {
 }
 
 window.startFirebaseApp = function() { 
-  buildTable();          
-  executeSearch(false);  
-  
-  try {
-    syncWithFirebase();  
-  } catch(e) {
-    console.warn("데이터베이스가 공유용(가짜 키) 상태라서 연결되지 않았습니다.");
-  }
+  syncWithFirebase();  
 };
 
 if (window.isUnlocked) window.startFirebaseApp();
