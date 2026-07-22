@@ -41,7 +41,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 /* 📅 헤더 셀 스타일 */thead th {  position: sticky; top: 0; z-index: 50; background: #f0f0f0;  border-bottom: 2px solid #111111; border-right: 1px solid #aaa; padding: 12px; font-size: 15px;}thead th:first-child { position: sticky; left: 0; z-index: 60; background: #e8e8e8; border-right: 2px solid #111111; }
 /* 📅 날짜 셀 스타일 */td.date-cell {  position: sticky; left: 0; z-index: 10; background: #f4f4f4;  border-right: 2px solid #111111; border-bottom: 1px solid #ddd;  text-align: center; padding: 10px; width: 80px; cursor: pointer; transition: background 0.2s;}.date-cell:hover { background: #e8e8e8; }.date-label { font-size: 13px; font-weight: 700; display: block; }.sun .date-label { color: #cc2222; }.sat .date-label { color: #1a55bb; }.day-row { transition: height 0.2s; }.day-row.expanded-row td { height: 260px !important; vertical-align: top; }th.year-col { cursor: pointer; transition: all 0.2s ease; }th.year-col:hover { background: #dcdcdc; }.year-title-text { transition: all 0.2s ease; display: block; }th.collapsed-year { width: 36px !important; min-width: 36px !important; max-width: 36px !important; padding: 0 !important; background: #ebebeb;}th.collapsed-year:hover { background: #dfdfdf; }th.collapsed-year .year-title-text { writing-mode: vertical-rl; text-orientation: upright; padding: 10px 0; font-size: 13px; letter-spacing: 2px; margin: 0 auto; color: #888;}td.entry-cell.collapsed-year { width: 36px !important; min-width: 36px !important; max-width: 36px !important; padding: 0 !important; background: #f8f8f8; cursor: pointer; border-right: 1px dashed #ccc;}td.entry-cell.collapsed-year:hover { background: #eeeeee; }td.entry-cell.collapsed-year > * { display: none !important; }
 
-/* 🛠️ 레이아웃 전면 개선 구역 */td.entry-cell {  border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;  vertical-align: top; width: 220px; transition: all 0.2s ease; padding: 0 !important;  height: 1px; user-select: none; }
+/* 🛠️ 레이아웃 전면 개선 구역 */td.entry-cell {  border-right: 1px solid #ccc; border-bottom: 1px solid #ccc;  vertical-align: top; width: 220px; transition: all 0.2s ease; padding: 0 !important;  height: 1px; }
 .entry-container {  display: flex; flex-direction: column; height: 100%;}
 
 /* ✨ 1️⃣ 상단: 독립된 별개 캘린더 칸 */.calendar-part {  background: #e8f0fe;  border: 1px solid #b3d4fc;  border-radius: 6px;  margin: 6px 6px 0 6px;  padding: 6px 8px;  display: none;}
@@ -72,12 +72,15 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   /* 모바일에서 폰트 크기 조절 메뉴 숨김 */
   .desktop-only { display: none !important; }
 
-  /* ✨ 모바일 버튼 최적화 (2열 구조) */
+  /* ✨ 모바일 버튼 2열 레이아웃 최적화 */
   .header-btns { width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; min-width: unset; }  
   .hbtn { padding: 8px 5px; font-size: 11px; }  
   #btn-reading-mode { grid-column: span 2; }
+  #btn-sync-calendar { grid-column: span 1; }
+  .hbtn[onclick="location.reload()"] { grid-column: span 1; } /* 앱 잠금 */
   #btn-today { grid-column: span 1; }
-  #app-manage-wrapper { grid-column: span 1; }
+  #btn-toggle-years { grid-column: span 1; }
+  #app-manage-wrapper { grid-column: span 2; }
   .side-search-block { grid-column: span 2; width: 100%; padding: 8px; }  
   
   .dropdown-content { width: 180px; left: auto; right: 0; }
@@ -142,20 +145,21 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
             </div>
           </div>
 
+          <!-- ✨ 바깥에 꺼내둔 핵심 기능 메뉴 -->
           <button class="hbtn teal"   id="btn-reading-mode">📚 독서 기록 모아보기</button>
-          <button class="hbtn orange" onclick="goToToday()" id="btn-today">🎯 오늘 일기 쓰기</button>          
-          
-          <!-- ✨ 앱 관리 메뉴 (드롭다운) -->
+          <button class="hbtn orange" onclick="goToToday()" id="btn-today">🎯 오늘 일기 쓰기</button>
+          <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>
+          <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>
+          <button class="hbtn gray"   onclick="location.reload()">🔒 앱 잠금</button>
+
+          <!-- ✨ 자주 안 쓰는 앱 관리 메뉴 (드롭다운) -->
           <div class="dropdown-wrapper" id="app-manage-wrapper">
             <button class="hbtn dark-gray" style="width:100%" onclick="toggleAppMenu(event)">⚙️ 앱 관리 ▼</button>
             <div class="dropdown-content" id="app-manage-menu">
-              <button class="hbtn red" id="btn-sync-calendar">📅 캘린더 연동</button>
               <button class="hbtn dark-gray" id="btn-clean-calendar">🧹 캘린더 지우기</button>
               <button class="hbtn green" id="btn-export">📥 엑셀 저장</button>
               <button class="hbtn blue" id="btn-import-trigger">📤 엑셀 불러오기</button>
               <button class="hbtn gold" id="btn-open-pw">🔑 패스워드 변경</button>
-              <button class="hbtn gray" onclick="location.reload()">🔒 앱 잠금</button>
-              <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>
             </div>
           </div>
 
