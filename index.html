@@ -126,7 +126,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 </script>
 
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
-<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          
+<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." spellcheck="false" style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." spellcheck="false" style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          
           <!-- ✨ 데스크탑용 폰트 크기 조절 메뉴 -->
           <div class="font-controls desktop-only">
             <div class="fc-row">
@@ -488,6 +488,7 @@ window.openSection = function(sectionEl, type, key, event) {
   const span = sectionEl.querySelector('.cell-text'); if(span) span.style.display = 'none';
   
   const ta = document.createElement('textarea'); ta.className = 'cell-textarea'; ta.value = text;
+  ta.setAttribute('spellcheck', 'false'); // ✨ 맞춤법 검사 빨간 줄 제거 속성 추가
   ta.placeholder = isReading ? '📚 읽은 도서 감상평 기록...' : '오늘의 일기 기록 중...';
   if (isReading) ta.style.backgroundColor = '#fdfdfd';
   
