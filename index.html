@@ -381,10 +381,9 @@ function syncWithFirebase() {
     if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
       initialLoadDone = true;
       setTimeout(() => {
+        // ✨ 데스크탑에서만 자동으로 스크롤하고 모바일에서는 메모칸이 유지되도록 막음!
         if (window.innerWidth > 768) {
           goToToday(); 
-        } else {
-          focusToday(); 
         }
       }, 150);
     }
