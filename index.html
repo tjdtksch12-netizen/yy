@@ -66,22 +66,27 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   #header-main-row { flex-direction: column; gap: 10px; }  
   #app-title { display: none; }  
   .memo-row { width: 100%; flex-direction: column; gap: 8px; }  
-  .memo-box { height: 120px !important; min-height: 120px !important; }  
-  .memo-box:focus { height: 360px !important; }  
+  
+  /* ✨ 모바일 최적화: 메모 1 크게 꽉 차게, 메모 2는 숨김 */
+  .memo-wrap:nth-child(2) { display: none; }
+  .memo-box { height: 35vh !important; min-height: 220px !important; font-size: 15px; }
+  .memo-box:focus { height: 45vh !important; }  
   
   /* 모바일에서 폰트 크기 조절 메뉴 숨김 */
   .desktop-only { display: none !important; }
 
-  /* ✨ 모바일 버튼 2열 레이아웃 최적화 */
+  /* ✨ 모바일 버튼 & 검색창 순서 재배치 (메모1 -> 검색 -> 오늘 일기 쓰기) */
   .header-btns { width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; min-width: unset; }  
-  .hbtn { padding: 8px 5px; font-size: 11px; }  
-  #btn-reading-mode { grid-column: span 2; }
-  #btn-sync-calendar { grid-column: span 1; }
-  .hbtn[onclick="location.reload()"] { grid-column: span 1; } /* 앱 잠금 */
-  #btn-today { grid-column: span 1; }
-  #btn-toggle-years { grid-column: span 1; }
-  #app-manage-wrapper { grid-column: span 2; }
-  .side-search-block { grid-column: span 2; width: 100%; padding: 8px; }  
+  .hbtn { padding: 8px 5px; font-size: 12px; }  
+
+  /* 배치 순서 지정 (CSS Grid order 속성) */
+  .side-search-block { grid-column: span 2; order: 1; width: 100%; padding: 8px; margin-top: 4px; }
+  #btn-today { grid-column: span 2; order: 2; padding: 12px 5px; font-size: 14px; margin-bottom: 6px; }
+  #btn-reading-mode { grid-column: span 2; order: 3; }
+  #btn-sync-calendar { grid-column: span 1; order: 4; }
+  #btn-toggle-years { grid-column: span 1; order: 5; }
+  #app-manage-wrapper { grid-column: span 1; order: 6; }
+  #btn-lock-app { grid-column: span 1; order: 7; }
   
   .dropdown-content { width: 180px; left: auto; right: 0; }
   
@@ -99,6 +104,16 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   (function(){
     let pinInput = '';
     window.addEventListener('DOMContentLoaded', () => {
+      // ✨ 1. 앱 실행 시 자동 로그인 정보가 남아있으면 잠금 화면 패스
+      if (localStorage.getItem('diary_auto_login') === 'true') {
+        document.getElementById('lock-screen').classList.add('hidden');
+        document.getElementById('app').classList.add('visible');
+        if (window.startFirebaseApp) window.startFirebaseApp();
+        else window.isUnlocked = true;
+        return; // 아래 비밀번호 입력 대기 로직 건너뜀
+      }
+
+      // 2. 일반 비밀번호 입력 및 해제 로직
       document.getElementById('numpad').onclick = (e) => {
         const btn = e.target; 
         if (!btn.classList.contains('num-btn') || btn.style.visibility === 'hidden') return;
@@ -107,6 +122,9 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
         document.querySelectorAll('#pin-dots .pin-dot').forEach((d,i) => d.classList.toggle('filled', i < pinInput.length));
         if (pinInput.length === 4) {
           if (pinInput === (localStorage.getItem('diary_pw') || '0000')) {
+            // ✨ 3. 비밀번호 성공 시 다음 접속을 위해 자동 로그인 플래그 저장
+            localStorage.setItem('diary_auto_login', 'true');
+            
             document.getElementById('lock-screen').classList.add('hidden');
             document.getElementById('app').classList.add('visible');
             if (window.startFirebaseApp) window.startFirebaseApp();
@@ -127,7 +145,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
 <div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." spellcheck="false" style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." spellcheck="false" style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          
-          <!-- ✨ 데스크탑용 폰트 크기 조절 메뉴 -->
+          <!-- 데스크탑용 폰트 크기 조절 메뉴 -->
           <div class="font-controls desktop-only">
             <div class="fc-row">
               <span class="fc-label">📝 메모 글씨</span>
@@ -145,14 +163,15 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
             </div>
           </div>
 
-          <!-- ✨ 바깥에 꺼내둔 핵심 기능 메뉴 -->
+          <!-- 바깥에 꺼내둔 핵심 기능 메뉴 -->
           <button class="hbtn teal"   id="btn-reading-mode">📚 독서 기록 모아보기</button>
           <button class="hbtn orange" onclick="goToToday()" id="btn-today">🎯 오늘 일기 쓰기</button>
           <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>
           <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>
-          <button class="hbtn gray"   onclick="location.reload()">🔒 앱 잠금</button>
+          <!-- ✨ 앱 잠금 버튼에 ID와 lockApp() 기능 추가 -->
+          <button class="hbtn gray"   id="btn-lock-app" onclick="lockApp()">🔒 앱 잠금</button>
 
-          <!-- ✨ 자주 안 쓰는 앱 관리 메뉴 (드롭다운) -->
+          <!-- 자주 안 쓰는 앱 관리 메뉴 (드롭다운) -->
           <div class="dropdown-wrapper" id="app-manage-wrapper">
             <button class="hbtn dark-gray" style="width:100%" onclick="toggleAppMenu(event)">⚙️ 앱 관리 ▼</button>
             <div class="dropdown-content" id="app-manage-menu">
@@ -177,7 +196,6 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// ✨ 선생님의 원래 파이어베이스 키 (본인 전용)
 const firebaseConfig = {
   apiKey: "AIzaSyAotiA_X_gMBGNnuSuiXezNK19Qxtgy6ro",
   authDomain: "diary-f82d2.firebaseapp.com",
@@ -192,7 +210,6 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
 
-// ✨ 선생님의 원래 구글 클라우드 키 (본인 전용)
 const GOOGLE_CLIENT_ID = '641946222063-seeq6pj5vr09bv4qhh9ju5nf8rq3agea.apps.googleusercontent.com';
 const GOOGLE_API_KEY = 'AIzaSyBEu0o3ExTILQHYzS7RORowlEYpTA4uQac';
 
@@ -220,7 +237,12 @@ collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 let dataLoaded = { diary: false, reading: false, calendar: false, deletedCal: false };
 let initialLoadDone = false; 
 
-// ✨ 앱 관리 메뉴 열기/닫기 로직
+// ✨ 앱 잠금 해제 기능 (수동 잠금 시 자동 로그인 해제됨)
+window.lockApp = function() {
+  localStorage.removeItem('diary_auto_login'); // 잠금 버튼을 누르면 자동 로그인 초기화
+  location.reload(); // 새로고침되어 잠금 화면으로 돌아감
+};
+
 window.toggleAppMenu = function(e) {
   e.stopPropagation();
   document.getElementById('app-manage-menu').classList.toggle('show');
@@ -232,7 +254,6 @@ window.addEventListener('click', (e) => {
   }
 });
 
-// ✨ 글씨 크기 초기화 및 적용 로직
 let memoFs = parseInt(localStorage.getItem('memo_fs')) || 14;
 let diaryFs = parseInt(localStorage.getItem('diary_fs')) || 14;
 
