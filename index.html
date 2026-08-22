@@ -62,6 +62,9 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 
 /* 📱 모바일 완전 맞춤형 레이아웃 (일기장 숨김 / 메모장 확대 / 검색 분리) */
 @media (max-width: 768px) {  
+  /* ✨ 가로 배열을 강제로 세로 배열로 변경 (찌그러짐 방지 핵심!) */
+  #header-main-row { flex-direction: column !important; gap: 10px; width: 100%; }
+
   /* 일기장이 들어있는 table-wrap이 헤더에 가려지지 않고 밀려 내려가도록 수정 */
   #header { position: relative !important; transform: none !important; padding: 15px 12px; box-shadow: none; border-bottom: 2px solid #111; }
   #table-wrap { max-height: none !important; overflow: visible !important; }
@@ -397,10 +400,13 @@ function syncWithFirebase() {
     if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
       initialLoadDone = true;
       setTimeout(() => {
-        // ✨ 모바일(768px 이하)에서는 오늘 일기로 자동 스크롤되는 것을 막아 
-        // 켰을 때 거대한 메모 1이 최상단에 바로 보이게 함!
-        if (window.innerWidth >= 800) {
+        // ✨ 모바일 접속 시 자동 일기장 스크롤 방지 장치!
+        // 데스크탑 화면(768px 초과)에서만 자동으로 일기 칸으로 내려가고
+        // 모바일에서는 화면을 가장 위쪽으로(메모장) 강제 고정합니다.
+        if (window.innerWidth > 768) {
           goToToday(); 
+        } else {
+          window.scrollTo(0, 0); 
         }
       }, 150);
     }
@@ -716,7 +722,7 @@ window.goToToday = function() {
       const targetDiaryPart = targetTd.querySelector('.diary-part'); 
       if(targetDiaryPart) openSection(targetDiaryPart, 'diary', key, null);
       
-      // 모바일에서 이 버튼을 눌렀을 때만 아래 일기장 영역으로 스르륵 내려감!
+      // ✨ [오늘 일기 쓰기] 버튼을 눌렀을 때만 아래로 스르륵 부드럽게 스크롤
       targetTd.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, 150);
