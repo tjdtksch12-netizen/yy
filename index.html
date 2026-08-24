@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
-<!-- ✨ 모바일에서 더블클릭 인식을 빠르게 하고 줌 확대를 방지하기 위한 설정 -->
+<!-- ✨ 모바일 줌인 방지 및 더블터치 인식을 극대화하기 위한 설정 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>📓</title><link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><style>* { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -238,10 +238,6 @@ let lastSearchQuery = '';
 let currentMarkIdx = 0;
 let isReadingMode = false;
 
-// ✨ 더블 클릭 타이머 변수
-let lastClickTime = 0;
-let lastClickKey = '';
-
 let collapsedYears = [];
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
@@ -418,20 +414,33 @@ document.getElementById('btn-reading-mode').onclick = () => {
   executeSearch(false, 'diary'); 
 };
 
-// ✨ 공통: 클릭한 위치의 글자 인덱스를 정확하게 파악하는 함수 (메모장 & 일기장 모두 사용)
-function getCaretPos(e, container) {
-  if (!e || e.clientX === undefined || !container) return -1;
+// ✨ [핵심 수정 1] 커서 위치 파악을 위한 완벽 계산 함수 (메모장 & 일기장 공통)
+function getCaretPos(e, container, textValue) {
+  if (!e || !container) return -1;
   let x = e.clientX, y = e.clientY;
-  if (e.touches && e.touches.length > 0) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
   
+  if (x === undefined || y === undefined) {
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      x = e.changedTouches[0].clientX;
+      y = e.changedTouches[0].clientY;
+    } else if (e.touches && e.touches.length > 0) {
+      x = e.touches[0].clientX;
+      y = e.touches[0].clientY;
+    } else {
+      return -1;
+    }
+  }
+
+  // 브라우저 네이티브 기능으로 정확한 텍스트 위치 찾기
   try {
-    let range;
+    let range = null;
     if (document.caretPositionFromPoint) {
       let pos = document.caretPositionFromPoint(x, y);
       if (pos) { range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
     } else if (document.caretRangeFromPoint) {
       range = document.caretRangeFromPoint(x, y);
     }
+    
     if (range) {
       let preCaretRange = range.cloneRange();
       preCaretRange.selectNodeContents(container);
@@ -439,32 +448,53 @@ function getCaretPos(e, container) {
       return preCaretRange.toString().length;
     }
   } catch(err) {}
-  return -1;
+
+  // 💡 [핵심 안전장치] 만약 여백을 눌러 네이티브 기능이 실패하면, 좌표를 수학적으로 계산해서 커서를 꽂아줌
+  try {
+    if (textValue) {
+      let rect = container.getBoundingClientRect();
+      let relY = y - rect.top - 12; // 12px 패딩 보정
+      let lineHeight = parseInt(window.getComputedStyle(container).lineHeight) || 22;
+      let lineIdx = Math.max(0, Math.floor(relY / lineHeight));
+      let lines = textValue.split('\n');
+      
+      if (lineIdx >= lines.length) return textValue.length; // 너무 아래를 누르면 맨 끝으로
+      
+      let pos = 0;
+      for (let i = 0; i < lineIdx; i++) pos += lines[i].length + 1; // 줄바꿈 문자 포함
+      
+      let relX = x - rect.left - 12;
+      let charW = parseInt(window.getComputedStyle(container).fontSize) * 0.7; // 대략적인 글자 폭
+      let charOffset = Math.max(0, Math.floor(relX / charW));
+      pos += Math.min(charOffset, lines[lineIdx].length);
+      return pos;
+    }
+  } catch(e) {}
+
+  return -1; // 완벽히 실패 시에만 -1
 }
 
-// ✨ 메모장 클릭 시 클릭한 글자 위치로 커서가 쏙 들어가도록 완벽 개선
 window.openMemo = function(num, e) {
   const disp = document.getElementById(`memo-disp-${num}`); 
   const edit = document.getElementById(`memo-edit-${num}`);
   
   if (edit.style.display === 'block') return; 
 
-  let caretPos = getCaretPos(e, disp);
+  const rawText = memoData[num];
+  let caretPos = getCaretPos(e, disp, rawText);
 
   disp.style.display = 'none'; 
   edit.style.display = 'block'; 
-  edit.value = memoData[num]; 
+  edit.value = rawText; 
   
-  // 터치 시 창 새로고침 방지
+  // 터치 이벤트는 막지 않고 오직 onclick만 막아 글 작성 중 튕기는 버그 완벽 해결
   edit.onclick = (ev) => ev.stopPropagation();
-  edit.ontouchstart = (ev) => ev.stopPropagation();
 
   edit.focus();
   
+  // 💡 계산된 커서 위치로 쏙 밀어넣기
   if (caretPos >= 0) {
     setTimeout(() => { edit.setSelectionRange(caretPos, caretPos); }, 10);
-  } else {
-    setTimeout(() => { edit.setSelectionRange(edit.value.length, edit.value.length); }, 10);
   }
 };
 
@@ -477,14 +507,37 @@ window.closeMemo = function(num) {
   edit.oninput = (e) => { memoData[num] = e.target.value; set(ref(db, `memos/memo${num}`), e.target.value); }; edit.onblur = () => closeMemo(num);
 });
 
+
+// ✨ [핵심 수정 2] 더블 터치(클릭) 이벤트 글로벌 리스너 (일기장 하단 빈 공간 더블클릭 인식용)
+let lastTapTime = 0;
+document.addEventListener('DOMContentLoaded', () => {
+  const tableWrap = document.getElementById('table-wrap');
+  if (tableWrap) {
+    // 모바일 터치 처리
+    tableWrap.addEventListener('touchstart', (e) => {
+      const now = Date.now();
+      if (now - lastTapTime < 350) { // 350ms 이내에 두 번 터치하면 더블탭으로 간주
+        const td = e.target.closest('.entry-cell');
+        if (td) revealReading(td, td.dataset.key);
+      }
+      lastTapTime = now;
+    }, {passive: true});
+    
+    // PC 마우스 더블클릭 처리
+    tableWrap.addEventListener('dblclick', (e) => {
+      const td = e.target.closest('.entry-cell');
+      if (td) revealReading(td, td.dataset.key);
+    });
+  }
+});
+
+// 숨어있는 독서 기록 칸을 여는 함수
 window.revealReading = function(tdEl, key) {
   if (isReadingMode) return;
   const readPart = tdEl.querySelector('.reading-part');
   if (readPart && readPart.style.display === 'none') {
     readPart.style.display = 'block';
-    
-    // 만약 일기장을 쓰고 있던 중이라면 자동으로 닫고 독서기록으로 넘어감
-    if (activeEditor) closeEditor(); 
+    if (activeEditor) closeEditor(); // 다른 걸 수정 중이었다면 저장하고 닫음
     openSection(readPart, 'reading', key, null);
   }
 };
@@ -559,52 +612,30 @@ window.toggleRowExpand = function(rowEl, event) {
   if (isExpanded) rowEl.classList.remove('expanded-row'); else rowEl.classList.add('expanded-row');
 }
 
-// ✨ 일기장 클릭 시 커서 위치 파악 및 "더블클릭"으로 독서기록 여는 로직 완성
+// ✨ 일기장도 클릭한 위치 그대로 커서가 가도록 적용
 window.openSection = function(sectionEl, type, key, event) {
   if (event) event.stopPropagation();
   if (sectionEl.closest('td').classList.contains('collapsed-year')) { toggleYear(parseInt(sectionEl.closest('td').dataset.year)); return; }
   
-  // 💡 빈 공간 더블클릭 감지: 400ms 내에 같은 곳을 두 번 누르면 독서 기록 오픈!
-  const now = Date.now();
-  if (type === 'diary' && (now - lastClickTime < 400) && lastClickKey === key) {
-    lastClickTime = 0; // 초기화
-    if (activeEditor) closeEditor(); // 일기장을 열려던 걸 취소하고 닫음
-    revealReading(sectionEl.closest('td'), key); // 독서 기록을 짠! 오픈
-    return;
-  }
-  lastClickTime = now;
-  lastClickKey = key;
-
-  // 이미 현재 칸을 편집 중이면 아무것도 안 하고 글자 터치(커서 이동)만 되게 냅둠
+  // 이미 편집 중인 곳을 클릭하면 창 초기화 없이 커서 위치만 바꿀 수 있도록 통과시킴
   if (activeEditor && activeEditor.key === key && activeEditor.type === type) return;
   if (activeEditor) closeEditor();
   
   const span = sectionEl.querySelector('.cell-text'); 
-  let caretPos = getCaretPos(event, span);
+  const text = (type === 'reading') ? (readingEntries[key] || '') : (entries[key] || '');
 
-  const isReading = (type === 'reading'); const text = isReading ? (readingEntries[key] || '') : (entries[key] || '');
+  let caretPos = getCaretPos(event, span, text);
+
   if(span) span.style.display = 'none';
   
   const ta = document.createElement('textarea'); ta.className = 'cell-textarea'; ta.value = text;
   ta.setAttribute('spellcheck', 'false'); 
   
-  // 💡 작성 중인 텍스트칸 내부에서 더블클릭해도 독서 기록이 열릴 수 있도록 추가!
-  ta.onclick = (e) => {
-    e.stopPropagation(); // 이 코드가 있어서 이제 작성 중 텍스트를 마음대로 누르고 이동할 수 있습니다.
-    const tNow = Date.now();
-    if (type === 'diary' && (tNow - lastClickTime < 400) && lastClickKey === key) {
-      lastClickTime = 0;
-      closeEditor();
-      revealReading(sectionEl.closest('td'), key);
-      return;
-    }
-    lastClickTime = tNow;
-    lastClickKey = key;
-  };
-  ta.ontouchstart = (e) => e.stopPropagation();
+  // 글 작성 중 터치 안 되던 버그 유발 요소 완전 삭제! (stopPropagation만 유지)
+  ta.onclick = (e) => e.stopPropagation();
 
-  ta.placeholder = isReading ? '📚 읽은 도서 감상평 기록...' : '오늘의 일기 기록 중...';
-  if (isReading) ta.style.backgroundColor = '#fdfdfd';
+  ta.placeholder = (type === 'reading') ? '📚 읽은 도서 감상평 기록...' : '오늘의 일기 기록 중...';
+  if (type === 'reading') ta.style.backgroundColor = '#fdfdfd';
   
   sectionEl.appendChild(ta); ta.focus();
   const res = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
@@ -613,8 +644,6 @@ window.openSection = function(sectionEl, type, key, event) {
 
   if (caretPos >= 0) {
     setTimeout(() => { ta.setSelectionRange(caretPos, caretPos); }, 10);
-  } else {
-    setTimeout(() => { ta.setSelectionRange(ta.value.length, ta.value.length); }, 10);
   }
 }
 
@@ -761,7 +790,6 @@ function executeSearch(isNext = false, searchType = 'memo') {
   if (query) setTimeout(scrollToNextMark, 100);
 }
 
-// ✨ 모바일 키보드가 가리지 않게 스크롤을 똑똑하게 옮겨주는 마법의 함수!
 function scrollToNextMark() {
   const marks = document.querySelectorAll('mark'); 
   if (marks.length === 0) return; 
@@ -774,8 +802,6 @@ function scrollToNextMark() {
   const memoDisp = targetMark.closest('.memo-disp');
   if (memoDisp) { 
     if (window.innerWidth <= 768) {
-      // 💡 화면 전체가 강제로 올라가는 것을 막고, 메모장 '내부'의 스크롤만 굴립니다!
-      // 형광펜 표시된 곳이 '검색창 바로 위' 쯤 오도록 넉넉하게 80px 여유를 줌
       memoDisp.scrollTop = Math.max(0, targetMark.offsetTop - memoDisp.clientHeight + 80); 
     } else {
       memoDisp.scrollTop = Math.max(0, targetMark.offsetTop - 40); 
