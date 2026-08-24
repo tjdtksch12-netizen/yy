@@ -62,18 +62,13 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 
 /* 📱 모바일 완전 맞춤형 레이아웃 */
 @media (max-width: 768px) {  
-  /* 가로 배열을 강제로 세로 배열로 변경 (찌그러짐 완벽 방지) */
   #header-main-row { flex-direction: column !important; gap: 10px; width: 100%; }
-
   #header { position: relative !important; transform: none !important; padding: 15px 12px; box-shadow: none; border-bottom: 2px solid #111; }
-  
-  /* ✨ 일기장 영역이 화면 밖으로 넘어가면 자체적으로 가로 스크롤 생성 */
   #table-wrap { max-height: none !important; overflow-x: auto !important; overflow-y: hidden !important; width: 100vw; }
   
   #app-title { display: none; }  
   .memo-row { width: 100%; flex-direction: column; gap: 8px; }  
   
-  /* 메모 2는 숨기고, 메모 1을 모바일 화면에 꽉 차게 */
   .memo-wrap:nth-child(2) { display: none; }
   .memo-box { 
     height: calc(100dvh - 200px) !important; 
@@ -82,7 +77,6 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   }
   .memo-box:focus { height: calc(100dvh - 200px) !important; }  
   
-  /* 안 쓰는 버튼들 숨김 */
   .desktop-only, #btn-reading-mode, #btn-sync-calendar, #btn-toggle-years, #app-manage-wrapper, #btn-lock-app { display: none !important; }
 
   .header-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; min-width: unset; margin-top: 4px; }  
@@ -91,26 +85,20 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   .side-search-input { padding: 12px; font-size: 15px; border: 2px solid #ccc; border-radius: 6px; }
   .side-search-input:focus { border-color: #1a5fa8; }
   
-  /* 모바일에서는 [일기 검색] 숨기고 [메모 검색]만 */
   #btn-search-diary { display: none !important; }
   #btn-search-memo { flex: unset; width: 100%; padding: 14px 0; font-size: 15px; border-radius: 6px; }
   
   #btn-today { padding: 14px 0; font-size: 16px; margin: 0; border-radius: 6px; }
 
-  /* ✨ [오늘 일기] 클릭 시 가로 꽉 차게 만드는 핵심 디자인 */
   td.date-cell { width: 60px !important; min-width: 60px !important; padding: 10px 2px !important; }  
-  /* 가로 100vw에서 날짜칸(60px)을 뺀 나머지를 온전히 차지! */
   td.entry-cell { width: calc(100vw - 60px) !important; max-width: calc(100vw - 60px) !important; }  
-  /* 접혀있는 다른 연도는 공간을 거의 차지하지 않도록 축소 */
   td.entry-cell.collapsed-year, th.collapsed-year { width: 28px !important; min-width: 28px !important; max-width: 28px !important; padding: 0 !important; }
 
-  /* 세로 크기 제어: 위아래로 어제, 내일이 적당히 보이도록 높이 조절 */
   .day-row.expanded-row td { height: 280px !important; }  
 }
 </style></head><body>
 
 <script>
-  // ✨ 브라우저의 고질적인 자동 스크롤 현상 강제 차단 (접속하자마자 화면이 내려가는 것 방지)
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
@@ -394,8 +382,6 @@ function syncWithFirebase() {
     if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
       initialLoadDone = true;
       setTimeout(() => {
-        // ✨ 화면이 768px(PC)보다 크면 예전처럼 자동으로 일기칸으로 스크롤.
-        // 모바일 접속 시에는 무조건 [맨 위] 메모장에서 딱 고정되도록 완벽히 분리했습니다.
         if (window.innerWidth > 768) {
           goToToday(); 
         } else {
@@ -524,6 +510,11 @@ window.openSection = function(sectionEl, type, key, event) {
   
   const ta = document.createElement('textarea'); ta.className = 'cell-textarea'; ta.value = text;
   ta.setAttribute('spellcheck', 'false'); 
+
+  // ✨ 핵심 수정 1: 텍스트 박스 내부 터치 시 커서 이동만 되고 창이 닫히지 않도록 이벤트 차단!
+  ta.onclick = (e) => e.stopPropagation();
+  ta.ontouchstart = (e) => e.stopPropagation();
+  
   ta.placeholder = isReading ? '📚 읽은 도서 감상평 기록...' : '오늘의 일기 기록 중...';
   if (isReading) ta.style.backgroundColor = '#fdfdfd';
   
@@ -680,7 +671,19 @@ function scrollToNextMark() {
   const marks = document.querySelectorAll('mark'); if (marks.length === 0) return; marks.forEach(m => m.classList.remove('active-mark'));
   currentMarkIdx = currentMarkIdx % marks.length; const targetMark = marks[currentMarkIdx]; targetMark.classList.add('active-mark');
   const memoDisp = targetMark.closest('.memo-disp');
-  if (memoDisp) { memoDisp.scrollTop = Math.max(0, targetMark.offsetTop - 40); window.scrollTo({ top: 0, behavior: 'smooth' }); } 
+  if (memoDisp) { 
+    if (window.innerWidth <= 768) {
+      // ✨ 핵심 수정 2: 형광펜 결과가 화면 맨 위가 아니라 '검색창 바로 위쪽(메모장 하단)'에 오도록 스크롤!
+      memoDisp.scrollTop = Math.max(0, targetMark.offsetTop - memoDisp.clientHeight + 60); 
+      
+      const searchInput = document.getElementById('search-input');
+      // 검색창이 가려져 있다면 살짝 보이게 당겨줌
+      if (searchInput) searchInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      memoDisp.scrollTop = Math.max(0, targetMark.offsetTop - 40); 
+      window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    }
+  } 
   else targetMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
   currentMarkIdx++;
 }
@@ -698,7 +701,6 @@ window.goToToday = function() {
 
   const now = new Date(); const y = now.getFullYear(); const m = now.getMonth() + 1; const d = now.getDate(); const key = `${y}-${m}-${d}`;
   
-  // ✨ 모바일: 가로로 꽉 차게 보이기 위해 '올해'만 빼고 다른 연도는 모조리 접어버림
   if (window.innerWidth <= 768) {
     collapsedYears = YEARS.filter(year => year !== y);
     applyCollapsedYears();
@@ -715,10 +717,8 @@ window.goToToday = function() {
       const targetDiaryPart = targetTd.querySelector('.diary-part'); 
       if(targetDiaryPart) openSection(targetDiaryPart, 'diary', key, null);
       
-      // ✨ 1. 세로 스크롤: 오늘 날짜가 화면 중앙에 오게 하여 위아래로 어제, 내일이 보이게!
       targetTd.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-      // ✨ 2. 가로 스크롤(모바일 전용): 열린 오늘 칸이 화면 밖으로 밀리지 않도록 딱 맞춰서 당겨오기
       if (window.innerWidth <= 768) {
          const wrap = document.getElementById('table-wrap');
          if(wrap) wrap.scrollTo({ left: targetTd.offsetLeft - 60, behavior: 'smooth' });
