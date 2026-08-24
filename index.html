@@ -143,7 +143,10 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 </script>
 
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
-<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." spellcheck="false" style="display:none;"></textarea>          </div>          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." spellcheck="false" style="display:none;"></textarea>          </div>        </div>        <div class="header-btns">          
+<div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          
+          <div class="memo-wrap">            <div class="memo-label">메모 1</div>            <div class="memo-box memo-disp" id="memo-disp-1" onclick="openMemo(1, event)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." spellcheck="false" style="display:none;"></textarea>          </div>          
+          <div class="memo-wrap">            <div class="memo-label">메모 2</div>            <div class="memo-box memo-disp" id="memo-disp-2" onclick="openMemo(2, event)"></div>            <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." spellcheck="false" style="display:none;"></textarea>          </div>        
+        </div>        <div class="header-btns">          
           <div class="font-controls desktop-only">
             <div class="fc-row">
               <span class="fc-label">📝 메모 글씨</span>
@@ -408,10 +411,41 @@ document.getElementById('btn-reading-mode').onclick = () => {
   executeSearch(false, 'diary'); 
 };
 
-window.openMemo = function(num) {
-  const disp = document.getElementById(`memo-disp-${num}`); const edit = document.getElementById(`memo-edit-${num}`);
-  disp.style.display = 'none'; edit.style.display = 'block'; edit.value = memoData[num]; edit.focus();
+// ✨ 메모장 클릭 시 클릭한 글자 위치로 커서 이동
+window.openMemo = function(num, e) {
+  const disp = document.getElementById(`memo-disp-${num}`); 
+  const edit = document.getElementById(`memo-edit-${num}`);
+  
+  if (edit.style.display === 'block') return; 
+
+  let caretPos = -1;
+  if (e && e.clientX !== undefined) {
+    try {
+      let range;
+      if (document.caretRangeFromPoint) range = document.caretRangeFromPoint(e.clientX, e.clientY);
+      else if (document.caretPositionFromPoint) {
+        let pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+        if (pos) { range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
+      }
+      if (range) {
+        let preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(disp);
+        preCaretRange.setEnd(range.startContainer, range.startOffset);
+        caretPos = preCaretRange.toString().length;
+      }
+    } catch(err) {}
+  }
+
+  disp.style.display = 'none'; 
+  edit.style.display = 'block'; 
+  edit.value = memoData[num]; 
+  edit.focus();
+  
+  if (caretPos >= 0) {
+    setTimeout(() => { edit.setSelectionRange(caretPos, caretPos); }, 0);
+  }
 };
+
 window.closeMemo = function(num) {
   const disp = document.getElementById(`memo-disp-${num}`); const edit = document.getElementById(`memo-edit-${num}`);
   edit.style.display = 'none'; disp.style.display = 'block'; executeSearch(false, lastSearchType); 
@@ -421,8 +455,18 @@ window.closeMemo = function(num) {
   edit.oninput = (e) => { memoData[num] = e.target.value; set(ref(db, `memos/memo${num}`), e.target.value); }; edit.onblur = () => closeMemo(num);
 });
 
-window.revealReading = function(tdEl, key) {
+// ✨ 빈 공간 더블 클릭 시 독서 기록칸 열기 (텍스트 선택 동작과 충돌 방지)
+window.revealReading = function(tdEl, key, event) {
   if (isReadingMode) return;
+  
+  if (event) {
+    const target = event.target;
+    // 글자를 더블클릭해서 텍스트를 선택할 때는 독서 기록칸이 열리지 않게 방어
+    if (target.tagName === 'TEXTAREA' || target.classList.contains('cell-text') || target.closest('.calendar-part')) {
+      return; 
+    }
+  }
+
   const readPart = tdEl.querySelector('.reading-part');
   if (readPart && readPart.style.display === 'none') {
     readPart.style.display = 'block';
@@ -460,7 +504,7 @@ function buildTable() {
         
         const readStyle = (isToday || hasReadingVal) ? '' : 'display:none;';
 
-        rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}" ondblclick="revealReading(this, '${key}')">
+        rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}" ondblclick="revealReading(this, '${key}', event)">
           <div class="entry-container">
             <div class="calendar-part" id="cal-box-${key}"></div>
             <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)">
@@ -500,21 +544,42 @@ window.toggleRowExpand = function(rowEl, event) {
   if (isExpanded) rowEl.classList.remove('expanded-row'); else rowEl.classList.add('expanded-row');
 }
 
+// ✨ 일기장 클릭 시 클릭한 글자 위치로 커서 이동 및 텍스트 터치 오류 완전 제거
 window.openSection = function(sectionEl, type, key, event) {
   if (event) event.stopPropagation();
   if (sectionEl.closest('td').classList.contains('collapsed-year')) { toggleYear(parseInt(sectionEl.closest('td').dataset.year)); return; }
+  
+  // 이미 편집 중인 칸을 다시 눌렀을 때는 창을 새로고침하지 않고 그냥 통과 (커서 이동만 작동하게 함)
+  if (activeEditor && activeEditor.key === key && activeEditor.type === type) return;
   if (activeEditor) closeEditor();
   
+  let caretPos = -1;
+  const span = sectionEl.querySelector('.cell-text'); 
+  if (event && event.clientX !== undefined && event.target.classList.contains('cell-text') && span) {
+    try {
+      let range;
+      if (document.caretRangeFromPoint) range = document.caretRangeFromPoint(event.clientX, event.clientY);
+      else if (document.caretPositionFromPoint) {
+        let pos = document.caretPositionFromPoint(event.clientX, event.clientY);
+        if (pos) { range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
+      }
+      if (range) {
+        let preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(span);
+        preCaretRange.setEnd(range.startContainer, range.startOffset);
+        caretPos = preCaretRange.toString().length;
+      }
+    } catch(err) {}
+  }
+
   const isReading = (type === 'reading'); const text = isReading ? (readingEntries[key] || '') : (entries[key] || '');
-  const span = sectionEl.querySelector('.cell-text'); if(span) span.style.display = 'none';
+  if(span) span.style.display = 'none';
   
   const ta = document.createElement('textarea'); ta.className = 'cell-textarea'; ta.value = text;
   ta.setAttribute('spellcheck', 'false'); 
-
-  // ✨ 핵심 수정 1: 텍스트 박스 내부 터치 시 커서 이동만 되고 창이 닫히지 않도록 이벤트 차단!
-  ta.onclick = (e) => e.stopPropagation();
-  ta.ontouchstart = (e) => e.stopPropagation();
   
+  ta.onclick = (e) => e.stopPropagation(); // 이 부분만 남기고, 문제를 일으키던 모바일 터치이벤트 차단 코드는 삭제했습니다!
+
   ta.placeholder = isReading ? '📚 읽은 도서 감상평 기록...' : '오늘의 일기 기록 중...';
   if (isReading) ta.style.backgroundColor = '#fdfdfd';
   
@@ -522,6 +587,10 @@ window.openSection = function(sectionEl, type, key, event) {
   const res = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
   ta.oninput = res; res();
   activeEditor = { sectionEl, ta, span, type, key }; ta.onblur = () => closeEditor();
+
+  if (caretPos >= 0) {
+    setTimeout(() => { ta.setSelectionRange(caretPos, caretPos); }, 0);
+  }
 }
 
 window.closeEditor = function() {
@@ -667,24 +736,29 @@ function executeSearch(isNext = false, searchType = 'memo') {
   if (query) setTimeout(scrollToNextMark, 100);
 }
 
+// ✨ 키보드가 열려 있어도 검색 결과가 잘 보이도록 똑똑하게 스크롤 이동
 function scrollToNextMark() {
-  const marks = document.querySelectorAll('mark'); if (marks.length === 0) return; marks.forEach(m => m.classList.remove('active-mark'));
-  currentMarkIdx = currentMarkIdx % marks.length; const targetMark = marks[currentMarkIdx]; targetMark.classList.add('active-mark');
+  const marks = document.querySelectorAll('mark'); 
+  if (marks.length === 0) return; 
+  marks.forEach(m => m.classList.remove('active-mark'));
+  
+  currentMarkIdx = currentMarkIdx % marks.length; 
+  const targetMark = marks[currentMarkIdx]; 
+  targetMark.classList.add('active-mark');
+  
   const memoDisp = targetMark.closest('.memo-disp');
   if (memoDisp) { 
     if (window.innerWidth <= 768) {
-      // ✨ 핵심 수정 2: 형광펜 결과가 화면 맨 위가 아니라 '검색창 바로 위쪽(메모장 하단)'에 오도록 스크롤!
+      // 모바일: 메모장 내부의 스크롤만 굴려서 형광펜 결과가 '검색창 바로 위'로 오게 조정!
       memoDisp.scrollTop = Math.max(0, targetMark.offsetTop - memoDisp.clientHeight + 60); 
-      
-      const searchInput = document.getElementById('search-input');
-      // 검색창이 가려져 있다면 살짝 보이게 당겨줌
-      if (searchInput) searchInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } else {
       memoDisp.scrollTop = Math.max(0, targetMark.offsetTop - 40); 
-      window.scrollTo({ top: 0, behavior: 'smooth' }); 
     }
   } 
-  else targetMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  else {
+    targetMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
   currentMarkIdx++;
 }
 
