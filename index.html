@@ -13,20 +13,24 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 #header-top { display: flex; flex-direction: column; gap: 12px; }#header-main-row { display: flex; align-items: flex-start; gap: 20px; width: 100%; }#app-title { font-size: 22px; padding-top: 4px; }
 .memo-row { display: flex; gap: 15px; flex: 1; align-self: stretch; }.memo-wrap { flex: 1; display: flex; flex-direction: column; }.memo-label { font-size: 11px; color: #888888; font-weight: bold; margin-bottom: 5px; }
 
-/* ✨ 완벽한 커서 위치를 위한 메모장 구조 개편 */
+/* ✨ 1. 커서 문제 완벽 해결을 위한 투명 메모장 구조 개편 */
 .memo-container { position: relative; width: 100%; height: 244px; }
 .memo-box {  
   position: absolute; inset: 0; width: 100%; height: 100% !important; min-height: 100% !important;
-  padding: 12px; font-family: inherit; font-size: var(--memo-fs); line-height: 1.6;  
+  margin: 0; padding: 12px; font-family: inherit; font-size: var(--memo-fs); line-height: 1.6;  
   border-radius: 4px; border: 1.5px solid #333333;  
-  white-space: pre-wrap; word-break: break-all;
+  white-space: pre-wrap; word-break: break-all; box-sizing: border-box;
 }
-.memo-disp { background: #fcfcfc; z-index: 1; pointer-events: none; overflow-y: hidden; }
+.memo-disp { background: #fcfcfc; z-index: 1; pointer-events: none; overflow-y: hidden; color: #111; }
 .memo-edit { 
   background: transparent; color: transparent; caret-color: #1a5fa8; 
+  -webkit-text-fill-color: transparent; /* 모바일 대응 투명처리 */
   z-index: 2; resize: none; outline: none; border-color: transparent; overflow-y: auto;
 }
-.memo-edit:focus { background: #ffffff; color: #111111; z-index: 3; border-color: #1a5fa8; }
+.memo-edit:focus { 
+  background: #ffffff; color: #111111; -webkit-text-fill-color: #111111; 
+  z-index: 3; border-color: #1a5fa8; 
+}
 .memo-container.memo-match .memo-disp { background-color: #fffde7 !important; border: 2px solid #ffb300 !important; box-shadow: 0 0 10px rgba(255, 179, 0, 0.3); }
 
 /* ✨ 공통: 검색 형광펜 스타일 */mark { background-color: #ffeb3b; color: #000; font-weight: bold; padding: 1px 3px; border-radius: 2px; }mark.active-mark { background-color: #ff7043 !important; color: #fff !important; box-shadow: 0 0 5px rgba(255,112,67,0.7); border-radius: 3px; }
@@ -88,10 +92,8 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   .memo-row { width: 100%; flex-direction: column; gap: 8px; }  
   
   .memo-wrap:nth-child(2) { display: none; }
-  .memo-container { 
-    height: calc(100dvh - 200px) !important; 
-    min-height: 400px !important; 
-  }
+  .memo-container { height: calc(100dvh - 200px) !important; min-height: 400px !important; }
+  .memo-box { font-size: 15px; }
   
   .desktop-only, #btn-reading-mode, #btn-sync-calendar, #btn-toggle-years, #app-manage-wrapper, #btn-lock-app { display: none !important; }
 
@@ -161,7 +163,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
 <div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
 <div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          
           
-          <!-- ✨ 메모장 커서 버그 완벽 해결을 위한 구조 개편 -->
+          <!-- ✨ 메모장 커서 버그 완벽 해결을 위한 투명 레이어 구조 -->
           <div class="memo-wrap">            
             <div class="memo-label">메모 1</div>            
             <div class="memo-container" id="memo-container-1">
@@ -267,16 +269,16 @@ let lastSearchQuery = '';
 let currentMarkIdx = 0;
 let isReadingMode = false;
 
+// 💡 2. 빈 공간 더블클릭 인식을 위한 강력한 시간 감지 변수
+let lastClickTime = 0;
+let lastClickKey = '';
+
 let collapsedYears = [];
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 
 let dataLoaded = { diary: false, reading: false, calendar: false, deletedCal: false };
 let initialLoadDone = false; 
-
-// ✨ 빈 공간 더블클릭 인식을 위한 터치 시간 기록 변수
-let lastTapTime = 0;
-let lastTapTd = null;
 
 window.lockApp = function() {
   localStorage.removeItem('diary_auto_login'); 
@@ -413,28 +415,23 @@ async function fetchAndSaveCalendarEvents() {
   } catch (err) { alert("캘린더 통신 실패: " + err.message); }
 }
 
-// ✨ 투명 텍스트 박스 방식 (완벽한 메모장 커서 위치)
-// 이제 텍스트박스가 항상 메모장 바로 위에 위치하여 사용자는 투명한 텍스트박스를 누르게 됨
-// 브라우저의 기본 커서 추적 기능이 100% 작동하여 맨 끝으로 가는 현상 완벽 종결
+// 💡 1. 투명 텍스트 박스 방식의 초기화 (버그 원천 차단)
 function initMemoEditors() {
   [1, 2].forEach(num => {
     const edit = document.getElementById(`memo-edit-${num}`);
     const disp = document.getElementById(`memo-disp-${num}`);
-    
-    // 키보드 타이핑 시 데이터를 연동
+
     edit.addEventListener('input', (e) => {
       memoData[num] = e.target.value;
       set(ref(db, `memos/memo${num}`), e.target.value);
+      disp.innerHTML = escHtml(e.target.value);
     });
-    
-    // 스크롤 동기화
+
     edit.addEventListener('scroll', () => { disp.scrollTop = edit.scrollTop; });
-    
-    // 터치/클릭하여 포커스 되었을 때 뒤에 있는 형광펜 텍스트를 숨기고 진짜 텍스트 노출
-    edit.addEventListener('focus', () => { disp.innerHTML = escHtml(edit.value); });
-    
-    // 화면 밖을 터치하여 포커스가 풀렸을 때 다시 형광펜 검색어 렌더링
-    edit.addEventListener('blur', () => { executeSearch(false, lastSearchType); });
+
+    edit.addEventListener('blur', () => {
+      executeSearch(false, lastSearchType); // 배경에 형광펜 칠하기
+    });
   });
 }
 
@@ -465,13 +462,11 @@ function syncWithFirebase() {
       const data = snapshot.val(); 
       memoData[1] = data.memo1 || ''; 
       memoData[2] = data.memo2 || ''; 
-      
-      document.getElementById('memo-edit-1').value = memoData[1];
-      document.getElementById('memo-edit-2').value = memoData[2];
-      
-      initMemoEditors(); // 메모장 이벤트 바인딩 활성화
-      executeSearch(false, lastSearchType); 
     }
+    document.getElementById('memo-edit-1').value = memoData[1];
+    document.getElementById('memo-edit-2').value = memoData[2];
+    initMemoEditors();
+    executeSearch(false, lastSearchType); 
   }).catch(err => console.warn(err));
 }
 
@@ -482,31 +477,16 @@ document.getElementById('btn-reading-mode').onclick = () => {
   executeSearch(false, 'diary'); 
 };
 
-
-// ✨ 독서 기록 더블 클릭(따닥) 이벤트 전역 감지
-// 어디서 누르든 400ms 안에 두 번 누르면 무조건 독서 칸을 열어줌
-document.addEventListener('pointerdown', (e) => {
-  const td = e.target.closest('.entry-cell');
-  if (!td) return;
-  
-  const now = Date.now();
-  if (now - lastTapTime < 400 && lastTapTd === td) {
-    lastTapTime = 0; // 초기화
-    
-    // 만약 작성 중인 다른 창이 열려있다면 저장하고 닫음
+// 숨겨진 독서 기록 창을 오픈하는 함수
+window.revealReading = function(tdEl, key) {
+  if (isReadingMode) return;
+  const readPart = tdEl.querySelector('.reading-part');
+  if (readPart && readPart.style.display === 'none') {
+    readPart.style.display = 'block';
     if (activeEditor) closeEditor(); 
-    
-    const readPart = td.querySelector('.reading-part');
-    if (readPart && readPart.style.display === 'none') {
-      readPart.style.display = 'block';
-      openSection(readPart, 'reading', td.dataset.key, null);
-    }
-  } else {
-    lastTapTime = now;
-    lastTapTd = td;
+    openSection(readPart, 'reading', key, null);
   }
-}, { capture: true, passive: true });
-
+};
 
 function buildTable() {
   if (activeEditor) return;
@@ -535,12 +515,14 @@ function buildTable() {
         const key = `${y}-${m}-${d}`;
         const isToday = (key === todayStr);
         const hasReadingVal = readingEntries[key] && readingEntries[key].trim() !== '';
+        
         const readStyle = (isToday || hasReadingVal) ? '' : 'display:none;';
 
+        // 💡 PC 호환성을 위한 ondblclick 속성 유지
         rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}">
           <div class="entry-container">
             <div class="calendar-part" id="cal-box-${key}"></div>
-            <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)">
+            <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)" ondblclick="revealReading(this.closest('td'), '${key}')">
               <span class="cell-text"></span>
             </div>
             <div class="reading-part" onclick="openSection(this, 'reading', '${key}', event)" style="${readStyle}">
@@ -577,50 +559,92 @@ window.toggleRowExpand = function(rowEl, event) {
   if (isExpanded) rowEl.classList.remove('expanded-row'); else rowEl.classList.add('expanded-row');
 }
 
-// ✨ 일기장 글쓰기 클릭 시 커서 위치 파악 및 오류 해결
+// 💡 3. 일기장 커서 위치 계산용 보조 함수
+function getCaretPos(e, container, textValue) {
+  if (!e || !container) return -1;
+  let x = e.clientX, y = e.clientY;
+  if (x === undefined && e.touches && e.touches.length > 0) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
+  
+  try {
+    let range;
+    if (document.caretPositionFromPoint) {
+      let pos = document.caretPositionFromPoint(x, y);
+      if (pos) { range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
+    } else if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(x, y);
+    }
+    if (range) {
+      let preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(container);
+      preCaretRange.setEnd(range.startContainer, range.startOffset);
+      return preCaretRange.toString().length;
+    }
+  } catch(err) {}
+
+  // 네이티브 기능 실패 시 수학적 텍스트 위치 계산 (강제 맨밑 방지)
+  try {
+    if (textValue) {
+      let rect = container.getBoundingClientRect();
+      let relY = y - rect.top;
+      let lineHeight = parseInt(window.getComputedStyle(container).lineHeight) || 22;
+      let lineIdx = Math.max(0, Math.floor(relY / lineHeight));
+      let lines = textValue.split('\n');
+      if (lineIdx >= lines.length) return textValue.length;
+      let pos = 0;
+      for (let i = 0; i < lineIdx; i++) pos += lines[i].length + 1;
+      let relX = x - rect.left - 12;
+      let charW = parseInt(window.getComputedStyle(container).fontSize) * 0.7;
+      let charOffset = Math.max(0, Math.floor(relX / charW));
+      pos += Math.min(charOffset, lines[lineIdx].length);
+      return pos;
+    }
+  } catch(e) {}
+  return -1;
+}
+
+// ✨ 일기장 글쓰기 로직
 window.openSection = function(sectionEl, type, key, event) {
   if (event) event.stopPropagation();
   if (sectionEl.closest('td').classList.contains('collapsed-year')) { toggleYear(parseInt(sectionEl.closest('td').dataset.year)); return; }
   
-  // 이미 포커스 되어 글 작성 중이라면, 아무 짓도 하지 않고 브라우저 고유 터치 기능(커서이동) 작동!
+  // 💡 빈 공간 더블클릭 감지 로직 (모바일 호환)
+  const now = Date.now();
+  if (type === 'diary' && (now - lastClickTime < 400) && lastClickKey === key) {
+    lastClickTime = 0; 
+    if (activeEditor) closeEditor(); 
+    revealReading(sectionEl.closest('td'), key); 
+    return;
+  }
+  lastClickTime = now;
+  lastClickKey = key;
+
+  // 창이 이미 열려있을 때 누르면 창을 끄지 않고 "단순히 커서만 움직이도록" 허용
   if (activeEditor && activeEditor.key === key && activeEditor.type === type) return;
   if (activeEditor) closeEditor();
   
   const span = sectionEl.querySelector('.cell-text'); 
   const text = (type === 'reading') ? (readingEntries[key] || '') : (entries[key] || '');
 
-  // 클릭한 위치 인덱스를 브라우저 고유 기능으로 파악해둠
-  let caretPos = -1;
-  if (event && span) {
-    let x = event.clientX; let y = event.clientY;
-    if (event.touches && event.touches.length > 0) { x = event.touches[0].clientX; y = event.touches[0].clientY; }
-    if (x !== undefined && y !== undefined) {
-      try {
-        let range;
-        if (document.caretPositionFromPoint) {
-          let pos = document.caretPositionFromPoint(x, y);
-          if (pos) { range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
-        } else if (document.caretRangeFromPoint) {
-          range = document.caretRangeFromPoint(x, y);
-        }
-        if (range) {
-          let preCaretRange = range.cloneRange();
-          preCaretRange.selectNodeContents(span);
-          preCaretRange.setEnd(range.startContainer, range.startOffset);
-          caretPos = preCaretRange.toString().length;
-        }
-      } catch(err) {}
-    }
-  }
+  let caretPos = getCaretPos(event, span, text);
 
   if(span) span.style.display = 'none';
   
   const ta = document.createElement('textarea'); ta.className = 'cell-textarea'; ta.value = text;
   ta.setAttribute('spellcheck', 'false'); 
   
-  // ✨ 터치 오류(글 중간 수정 불가) 원인이었던 stopPropagation을 제외하고, 
-  // 입력창을 터치해도 바깥에서 캐치하지 않게만 안전하게 막음
-  ta.onclick = (e) => e.stopPropagation();
+  // 💡 작성 중인 텍스트칸 내부에서 클릭하거나 더블클릭할 때 이벤트
+  ta.onclick = (e) => {
+    e.stopPropagation(); // 이 한 줄 덕분에 오타 수정하려고 누를 때 버그가 사라집니다.
+    const tNow = Date.now();
+    if (type === 'diary' && (tNow - lastClickTime < 400) && lastClickKey === key) {
+      lastClickTime = 0;
+      closeEditor();
+      revealReading(sectionEl.closest('td'), key);
+      return;
+    }
+    lastClickTime = tNow;
+    lastClickKey = key;
+  };
 
   ta.placeholder = (type === 'reading') ? '📚 읽은 도서 감상평 기록...' : '오늘의 일기 기록 중...';
   if (type === 'reading') ta.style.backgroundColor = '#fdfdfd';
@@ -781,7 +805,6 @@ function executeSearch(isNext = false, searchType = 'memo') {
   if (query) setTimeout(scrollToNextMark, 100);
 }
 
-// ✨ 모바일 키보드 가림 완벽 방지, 형광펜 결과가 화면 위로 튕기지 않게 스크롤을 똑똑하게 옮겨주는 마법의 함수!
 function scrollToNextMark() {
   const marks = document.querySelectorAll('mark'); 
   if (marks.length === 0) return; 
@@ -793,11 +816,10 @@ function scrollToNextMark() {
   
   const memoDisp = targetMark.closest('.memo-disp');
   if (memoDisp) { 
-    const edit = memoDisp.nextElementSibling; // 바로 뒤에 있는 textarea
+    const edit = memoDisp.nextElementSibling;
     let targetScroll = 0;
     
     if (window.innerWidth <= 768) {
-      // 💡 화면 전체가 위로 올라가는 것을 막고, 오직 메모장 내부 텍스트만 스크롤합니다!
       targetScroll = Math.max(0, targetMark.offsetTop - memoDisp.clientHeight + 80); 
     } else {
       targetScroll = Math.max(0, targetMark.offsetTop - 40); 
