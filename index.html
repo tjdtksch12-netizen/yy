@@ -8,6 +8,11 @@
 }
 body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Gulim', 'Apple SD Gothic Neo', sans-serif;  color: #111111; min-height: 100vh;}
 /* ══ 잠금 화면 ══ */#lock-screen {  position: fixed; inset: 0; background: #111111; z-index: 9999;  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;}#lock-screen.hidden { display: none; }.lock-icon { font-size: 40px; }.lock-subtitle { font-size: 13px; color: #666666; }.pin-dots { display: flex; gap: 18px; height: 24px; }.pin-dot { width: 15px; height: 15px; border-radius: 50%; background: #3a3a3a; transition: all 0.12s; }.pin-dot.filled { background: #ffffff; transform: scale(1.2); }.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 248px; }.num-btn {  background: #1e1e1e; color: #ffffff; border: 1px solid #2e2e2e; border-radius: 10px;  font-size: 22px; padding: 18px 0; cursor: pointer; user-select: none; font-family: inherit;}.num-btn:active { background: #444444; transform: scale(0.95); }.num-btn.del-btn { font-size: 16px; color: #888888; }.lock-error { font-size: 12px; color: #ff6060; height: 16px; opacity: 0; transition: opacity 0.2s; }.lock-error.show { opacity: 1; }
+/* ✨ 자동 로그인 체크박스 스타일 */
+.auto-login-container { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.auto-login-container input[type="checkbox"] { width: 16px; height: 16px; accent-color: #1a5fa8; cursor: pointer; }
+.auto-login-container label { font-size: 13px; color: #aaaaaa; cursor: pointer; user-select: none; }
+
 /* ══ 메인 레이아웃 ══ */#app { display: none; }#app.visible { display: block; }
 #header {  position: sticky; top: 0; z-index: 100; background: #ffffff;  border-bottom: 2px solid #111111; padding: 15px 20px;  box-shadow: 0 2px 8px rgba(0,0,0,0.07);  transition: transform 0.3s ease, padding 0.3s ease, opacity 0.2s;  transform-origin: top;}
 #header-top { display: flex; flex-direction: column; gap: 12px; }#header-main-row { display: flex; align-items: flex-start; gap: 20px; width: 100%; }#app-title { font-size: 22px; padding-top: 4px; }
@@ -95,7 +100,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   .memo-container { height: calc(100dvh - 200px) !important; min-height: 400px !important; }
   .memo-box { font-size: 15px; }
   
-  .desktop-only, #btn-reading-mode, #btn-sync-calendar, #btn-toggle-years, #app-manage-wrapper, #btn-lock-app { display: none !important; }
+  .desktop-only, #btn-reading-mode, #btn-sync-calendar, #btn-toggle-years, #app-manage-wrapper { display: none !important; }
 
   .header-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; min-width: unset; margin-top: 4px; }  
   
@@ -127,7 +132,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
       if (localStorage.getItem('diary_auto_login') === 'true') {
         document.getElementById('lock-screen').classList.add('hidden');
         document.getElementById('app').classList.add('visible');
-        if (window.startFirebaseApp) window.startFirebaseApp();
+        if (window.startLocalApp) window.startLocalApp();
         else window.isUnlocked = true;
         return; 
       }
@@ -140,11 +145,14 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
         document.querySelectorAll('#pin-dots .pin-dot').forEach((d,i) => d.classList.toggle('filled', i < pinInput.length));
         if (pinInput.length === 4) {
           if (pinInput === (localStorage.getItem('diary_pw') || '0000')) {
-            localStorage.setItem('diary_auto_login', 'true');
+            // 자동 로그인 체크 여부 확인
+            if(document.getElementById('auto-login-cb').checked) {
+              localStorage.setItem('diary_auto_login', 'true');
+            }
             
             document.getElementById('lock-screen').classList.add('hidden');
             document.getElementById('app').classList.add('visible');
-            if (window.startFirebaseApp) window.startFirebaseApp();
+            if (window.startLocalApp) window.startLocalApp();
             else window.isUnlocked = true;
           } else {
             document.getElementById('lock-error').classList.add('show');
@@ -160,7 +168,13 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
   })();
 </script>
 
-<div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div></div>
+<div id="lock-screen">  <div class="lock-icon">📓</div>  <div class="lock-subtitle">비밀번호를 입력하세요</div>  <div class="pin-dots" id="pin-dots">    <div class="pin-dot"></div><div class="pin-dot"></div>    <div class="pin-dot"></div><div class="pin-dot"></div>  </div>  <div class="lock-error" id="lock-error">비밀번호가 틀렸습니다</div>  <div class="numpad" id="numpad">    <button class="num-btn" data-n="1">1</button><button class="num-btn" data-n="2">2</button><button class="num-btn" data-n="3">3</button>    <button class="num-btn" data-n="4">4</button><button class="num-btn" data-n="5">5</button><button class="num-btn" data-n="6">6</button>    <button class="num-btn" data-n="7">7</button><button class="num-btn" data-n="8">8</button><button class="num-btn" data-n="9">9</button>    <button class="num-btn" style="visibility:hidden"></button>    <button class="num-btn" data-n="0">0</button>    <button class="num-btn del-btn">⌫</button>  </div>
+  <!-- ✨ 자동 로그인 체크박스 추가 -->
+  <div class="auto-login-container">
+    <input type="checkbox" id="auto-login-cb">
+    <label for="auto-login-cb">자동 로그인 유지</label>
+  </div>
+</div>
 <div id="app">  <div id="header">    <div id="header-top">      <div id="header-main-row">        <div id="app-title">📓</div>        <div class="memo-row">          
           
           <!-- ✨ 메모장 커서 버그 완벽 해결을 위한 투명 레이어 구조 -->
@@ -168,7 +182,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
             <div class="memo-label">메모 1</div>            
             <div class="memo-container" id="memo-container-1">
               <div class="memo-box memo-disp" id="memo-disp-1"></div>            
-              <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." spellcheck="false"></textarea>          
+              <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." spellcheck="false" onclick="openMemo(1)"></textarea>          
             </div>
           </div>          
           
@@ -176,7 +190,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
             <div class="memo-label">메모 2</div>            
             <div class="memo-container" id="memo-container-2">
               <div class="memo-box memo-disp" id="memo-disp-2"></div>            
-              <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." spellcheck="false"></textarea>          
+              <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." spellcheck="false" onclick="openMemo(2)"></textarea>          
             </div>
           </div>        
         
@@ -199,9 +213,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
           </div>
 
           <button class="hbtn teal"   id="btn-reading-mode">📚 독서 기록 모아보기</button>
-          <button class="hbtn red"    id="btn-sync-calendar">📅 캘린더 연동</button>
           <button class="hbtn purple" id="btn-toggle-years">📅 전체 연도 보기</button>
-          <button class="hbtn gray"   id="btn-lock-app" onclick="lockApp()">🔒 앱 잠금</button>
 
           <div class="dropdown-wrapper" id="app-manage-wrapper">
             <button class="hbtn dark-gray" style="width:100%" onclick="toggleAppMenu(event)">⚙️ 앱 관리 ▼</button>
@@ -210,6 +222,8 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
               <button class="hbtn green" id="btn-export">📥 엑셀 저장</button>
               <button class="hbtn blue" id="btn-import-trigger">📤 엑셀 불러오기</button>
               <button class="hbtn gold" id="btn-open-pw">🔑 패스워드 변경</button>
+              <!-- ✨ 로그아웃 버튼 추가 -->
+              <button class="hbtn red" id="btn-logout" onclick="lockApp()">🔓 로그아웃 (잠금)</button>
             </div>
           </div>
 
@@ -231,26 +245,8 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
     <div class="pw-numpad" id="pw-numpad">      <button class="pw-num-btn" data-n="1">1</button><button class="pw-num-btn" data-n="2">2</button><button class="pw-num-btn" data-n="3">3</button>      <button class="pw-num-btn" data-n="4">4</button><button class="pw-num-btn" data-n="5">5</button><button class="pw-num-btn" data-n="6">6</button>      <button class="pw-num-btn" data-n="7">7</button><button class="pw-num-btn" data-n="8">8</button><button class="pw-num-btn" data-n="9">9</button>      <button class="pw-num-btn" style="visibility:hidden"></button>      <button class="pw-num-btn" data-n="0">0</button>      <button class="pw-num-btn del">⌫</button>    </div>    <div class="modal-btns">      <button class="modal-btn cancel" id="btn-close-pw">취소</button>    </div>  </div></div>
 <div id="toast">저장되었습니다 ✓</div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAotiA_X_gMBGNnuSuiXezNK19Qxtgy6ro",
-  authDomain: "diary-f82d2.firebaseapp.com",
-  databaseURL: "https://diary-f82d2-default-rtdb.firebaseio.com",
-  projectId: "diary-f82d2",
-  storageBucket: "diary-f82d2.firebasestorage.app",
-  messagingSenderId: "84875232611",
-  appId: "1:84875232611:web:4bd20877788cb5fdd93f56",
-  measurementId: "G-2ZBMSPNBGG"
-};
-
-const fbApp = initializeApp(firebaseConfig);
-const db = getDatabase(fbApp);
-
-const GOOGLE_CLIENT_ID = '641946222063-seeq6pj5vr09bv4qhh9ju5nf8rq3agea.apps.googleusercontent.com';
-const GOOGLE_API_KEY = 'AIzaSyBEu0o3ExTILQHYzS7RORowlEYpTA4uQac';
+<script>
+// ✨ 로컬 전용 버전
 
 const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033];
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12];
@@ -277,9 +273,7 @@ let collapsedYears = [];
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 
-let dataLoaded = { diary: false, reading: false, calendar: false, deletedCal: false };
-let initialLoadDone = false; 
-
+// ✨ 로그아웃 및 앱 잠금 기능
 window.lockApp = function() {
   localStorage.removeItem('diary_auto_login'); 
   location.reload(); 
@@ -320,31 +314,44 @@ window.exportToExcel = exportToExcel;
 window.openPwModal = openPwModal;
 window.closePwModal = closePwModal;
 
-document.getElementById('btn-clean-calendar').onclick = async () => {
+// ✨ 로컬 스토리지에 데이터를 통합 저장하는 함수
+function saveData() {
+  localStorage.setItem('diary_data', JSON.stringify(entries));
+  localStorage.setItem('reading_data', JSON.stringify(readingEntries));
+  localStorage.setItem('calendar_data', JSON.stringify(calendarEntries));
+  localStorage.setItem('deleted_calendar_data', JSON.stringify(deletedCalendarEvents));
+  localStorage.setItem('memos', JSON.stringify(memoData));
+}
+
+// ✨ 로컬 스토리지에서 데이터를 불러오는 함수
+function loadData() {
+  try { entries = JSON.parse(localStorage.getItem('diary_data') || '{}'); } catch(e) { entries = {}; }
+  try { readingEntries = JSON.parse(localStorage.getItem('reading_data') || '{}'); } catch(e) { readingEntries = {}; }
+  try { calendarEntries = JSON.parse(localStorage.getItem('calendar_data') || '{}'); } catch(e) { calendarEntries = {}; }
+  try { deletedCalendarEvents = JSON.parse(localStorage.getItem('deleted_calendar_data') || '{}'); } catch(e) { deletedCalendarEvents = {}; }
+  try { memoData = JSON.parse(localStorage.getItem('memos') || '{"1":"", "2":""}'); } catch(e) { memoData = {1:'', 2:''}; }
+}
+
+document.getElementById('btn-clean-calendar').onclick = () => {
   if (!confirm("일기장에 섞여버린 기존 캘린더 일정([🗓️...])들을 자동으로 모두 지우시겠습니까?\n\n(직접 쓰신 진짜 일기는 안전하게 100% 보존됩니다!)")) return;
   showToast("일기장 대청소 중...");
   
   let cleanedCount = 0;
-  let cleanedEntries = { ...entries };
-
-  for (let key in cleanedEntries) {
-    let text = cleanedEntries[key];
+  for (let key in entries) {
+    let text = entries[key];
     if (text && text.includes('[🗓️')) {
       let lines = text.split('\n');
       let newLines = lines.filter(line => !line.trim().includes('[🗓️'));
-      cleanedEntries[key] = newLines.join('\n').trim();
+      entries[key] = newLines.join('\n').trim();
       cleanedCount++;
     }
   }
 
-  try {
-    await set(ref(db, 'diary_data'), cleanedEntries);
-    await set(ref(db, 'calendar_data'), {}); 
-    await set(ref(db, 'deleted_calendar_data'), {}); 
-    alert(`✨ 청소 완료!\n총 ${cleanedCount}일 치의 일기에서 과거 캘린더 흔적을 싹 지웠습니다.\n\n이제 우측의 [📅 캘린더 연동] 버튼을 다시 눌러서 예쁜 박스형태로 캘린더를 새로 받아주세요!`);
-  } catch (err) {
-    alert("청소 중 오류 발생: " + err.message);
-  }
+  calendarEntries = {}; 
+  deletedCalendarEvents = {}; 
+  saveData();
+  alert(`✨ 청소 완료!\n총 ${cleanedCount}일 치의 일기에서 과거 캘린더 흔적을 싹 지웠습니다.`);
+  executeSearch(false, lastSearchType);
 };
 
 window.deleteCalendarLine = function(e, key, encodedLine) {
@@ -352,68 +359,22 @@ window.deleteCalendarLine = function(e, key, encodedLine) {
   if(!confirm('해당 일정을 다이어리에서 삭제하시겠습니까?\n(삭제 후 다시 연동해도 부활하지 않습니다!)')) return;
   
   const lineText = decodeURIComponent(encodedLine);
-  
   let text = calendarEntries[key] || '';
   let lines = text.split('\n');
   let newLines = lines.filter(l => l !== lineText);
   let newText = newLines.join('\n').trim();
   
   calendarEntries[key] = newText;
-  set(ref(db, 'calendar_data/' + key), newText);
   
   if (!deletedCalendarEvents[key]) deletedCalendarEvents[key] = [];
   if (!deletedCalendarEvents[key].includes(lineText)) {
      deletedCalendarEvents[key].push(lineText);
-     set(ref(db, 'deleted_calendar_data/' + key), deletedCalendarEvents[key]);
   }
   
+  saveData();
   showToast('일정 삭제됨 🗑️');
   executeSearch(false, lastSearchType);
 };
-
-let tokenClient; let gapiInited = false; let gisInited = false;
-const script1 = document.createElement('script'); script1.src = "https://apis.google.com/js/api.js";
-script1.onload = () => { gapi.load('client', async () => { try { await gapi.client.init({ apiKey: GOOGLE_API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'], }); gapiInited = true; } catch(err) {} }); }; document.head.appendChild(script1);
-const script2 = document.createElement('script'); script2.src = "https://accounts.google.com/gsi/client";
-script2.onload = () => { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/calendar.readonly', callback: '' }); gisInited = true; }; document.head.appendChild(script2);
-
-document.getElementById('btn-sync-calendar').onclick = () => {
-  if (!gapiInited || !gisInited) { alert("구글 라이브러리 통신 중입니다. 잠시 후 시도해주세요."); return; }
-  tokenClient.callback = async (resp) => { if (resp.error !== undefined) throw (resp); await fetchAndSaveCalendarEvents(); };
-  if (gapi.client.getToken() === null) tokenClient.requestAccessToken({prompt: 'consent'});
-  else tokenClient.requestAccessToken({prompt: ''});
-};
-
-async function fetchAndSaveCalendarEvents() {
-  showToast("캘린더 데이터 동기화 중...");
-  try {
-    const cy = new Date().getFullYear();
-    const response = await gapi.client.calendar.events.list({
-      'calendarId': 'primary', 'timeMin': (new Date(cy - 1, 0, 1)).toISOString(), 'timeMax': (new Date(cy + 2, 11, 31)).toISOString(),
-      'showDeleted': false, 'singleEvents': true, 'maxResults': 2500, 'orderBy': 'startTime'
-    });
-    const events = response.result.items;
-    if (!events || events.length === 0) return alert("동기화할 일정이 비어있습니다.");
-    
-    let updatedCount = 0; let newCalEntries = { ...calendarEntries }; 
-    events.forEach(event => {
-      const start = event.start.dateTime || event.start.date; if(!start) return;
-      const d = new Date(start); const y = d.getFullYear(); const m = d.getMonth() + 1; const day = d.getDate();
-      const key = `${y}-${m}-${day}`; if(!YEARS.includes(y)) return;
-      const eventText = `[🗓️ ${event.summary}]`;
-      
-      if (deletedCalendarEvents[key] && deletedCalendarEvents[key].includes(eventText)) {
-        return; 
-      }
-      
-      let currentText = newCalEntries[key] || '';
-      if (!currentText.includes(eventText)) { newCalEntries[key] = currentText ? currentText + '\n' + eventText : eventText; updatedCount++; }
-    });
-    if (updatedCount > 0) {
-      await set(ref(db, 'calendar_data'), newCalEntries); alert(`🎉 구글 캘린더 연동 완료!\n상단 독립 칸에 총 ${updatedCount}개의 일정이 배치되었습니다.`);
-    } else { alert("새롭게 추가된 일정이 없습니다."); }
-  } catch (err) { alert("캘린더 통신 실패: " + err.message); }
-}
 
 // 💡 1. 투명 텍스트 박스 방식의 초기화 (버그 원천 차단)
 function initMemoEditors() {
@@ -423,7 +384,7 @@ function initMemoEditors() {
 
     edit.addEventListener('input', (e) => {
       memoData[num] = e.target.value;
-      set(ref(db, `memos/memo${num}`), e.target.value);
+      saveData();
       disp.innerHTML = escHtml(e.target.value);
     });
 
@@ -435,39 +396,24 @@ function initMemoEditors() {
   });
 }
 
-function syncWithFirebase() {
-  const triggerRender = () => { 
-    buildTable(); 
-    executeSearch(false, lastSearchType); 
-    
-    if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
-      initialLoadDone = true;
-      setTimeout(() => {
-        if (window.innerWidth > 768) {
-          goToToday(); 
-        } else {
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); 
-        }
-      }, 150);
-    }
-  };
+// ✨ 앱 로드 및 시작 
+window.startLocalApp = function() {
+  loadData();
   
-  onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.diary = true; triggerRender(); });
-  onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.reading = true; triggerRender(); });
-  onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.calendar = true; triggerRender(); });
-  onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.deletedCal = true; triggerRender(); });
-
-  get(child(ref(db), 'memos')).then((snapshot) => {
-    if (snapshot.exists()) { 
-      const data = snapshot.val(); 
-      memoData[1] = data.memo1 || ''; 
-      memoData[2] = data.memo2 || ''; 
+  document.getElementById('memo-edit-1').value = memoData[1] || '';
+  document.getElementById('memo-edit-2').value = memoData[2] || '';
+  initMemoEditors();
+  
+  buildTable(); 
+  executeSearch(false, lastSearchType); 
+  
+  setTimeout(() => {
+    if (window.innerWidth > 768) {
+      goToToday(); 
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); 
     }
-    document.getElementById('memo-edit-1').value = memoData[1];
-    document.getElementById('memo-edit-2').value = memoData[2];
-    initMemoEditors();
-    executeSearch(false, lastSearchType); 
-  }).catch(err => console.warn(err));
+  }, 150);
 }
 
 document.getElementById('btn-reading-mode').onclick = () => {
@@ -477,16 +423,28 @@ document.getElementById('btn-reading-mode').onclick = () => {
   executeSearch(false, 'diary'); 
 };
 
-// 숨겨진 독서 기록 창을 오픈하는 함수
-window.revealReading = function(tdEl, key) {
-  if (isReadingMode) return;
-  const readPart = tdEl.querySelector('.reading-part');
-  if (readPart && readPart.style.display === 'none') {
-    readPart.style.display = 'block';
+// ✨ 독서 기록 더블 클릭(따닥) 이벤트 전역 감지 (강력한 터치 센서 도입!)
+document.addEventListener('pointerdown', (e) => {
+  const td = e.target.closest('.entry-cell');
+  if (!td) return;
+  
+  const now = Date.now();
+  if (now - lastClickTime < 400 && lastClickKey === td.dataset.key) {
+    lastClickTime = 0; // 초기화
+    
+    // 만약 작성 중인 다른 창이 열려있다면 닫음
     if (activeEditor) closeEditor(); 
-    openSection(readPart, 'reading', key, null);
+    
+    const readPart = td.querySelector('.reading-part');
+    if (readPart && readPart.style.display === 'none') {
+      readPart.style.display = 'block';
+      openSection(readPart, 'reading', td.dataset.key, null);
+    }
+  } else {
+    lastClickTime = now;
+    lastClickKey = td.dataset.key;
   }
-};
+}, { capture: true, passive: true });
 
 function buildTable() {
   if (activeEditor) return;
@@ -518,11 +476,10 @@ function buildTable() {
         
         const readStyle = (isToday || hasReadingVal) ? '' : 'display:none;';
 
-        // 💡 PC 호환성을 위한 ondblclick 속성 유지
         rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}">
           <div class="entry-container">
             <div class="calendar-part" id="cal-box-${key}"></div>
-            <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)" ondblclick="revealReading(this.closest('td'), '${key}')">
+            <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)">
               <span class="cell-text"></span>
             </div>
             <div class="reading-part" onclick="openSection(this, 'reading', '${key}', event)" style="${readStyle}">
@@ -559,92 +516,50 @@ window.toggleRowExpand = function(rowEl, event) {
   if (isExpanded) rowEl.classList.remove('expanded-row'); else rowEl.classList.add('expanded-row');
 }
 
-// 💡 3. 일기장 커서 위치 계산용 보조 함수
-function getCaretPos(e, container, textValue) {
-  if (!e || !container) return -1;
-  let x = e.clientX, y = e.clientY;
-  if (x === undefined && e.touches && e.touches.length > 0) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
-  
-  try {
-    let range;
-    if (document.caretPositionFromPoint) {
-      let pos = document.caretPositionFromPoint(x, y);
-      if (pos) { range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
-    } else if (document.caretRangeFromPoint) {
-      range = document.caretRangeFromPoint(x, y);
-    }
-    if (range) {
-      let preCaretRange = range.cloneRange();
-      preCaretRange.selectNodeContents(container);
-      preCaretRange.setEnd(range.startContainer, range.startOffset);
-      return preCaretRange.toString().length;
-    }
-  } catch(err) {}
 
-  // 네이티브 기능 실패 시 수학적 텍스트 위치 계산 (강제 맨밑 방지)
-  try {
-    if (textValue) {
-      let rect = container.getBoundingClientRect();
-      let relY = y - rect.top;
-      let lineHeight = parseInt(window.getComputedStyle(container).lineHeight) || 22;
-      let lineIdx = Math.max(0, Math.floor(relY / lineHeight));
-      let lines = textValue.split('\n');
-      if (lineIdx >= lines.length) return textValue.length;
-      let pos = 0;
-      for (let i = 0; i < lineIdx; i++) pos += lines[i].length + 1;
-      let relX = x - rect.left - 12;
-      let charW = parseInt(window.getComputedStyle(container).fontSize) * 0.7;
-      let charOffset = Math.max(0, Math.floor(relX / charW));
-      pos += Math.min(charOffset, lines[lineIdx].length);
-      return pos;
-    }
-  } catch(e) {}
-  return -1;
-}
+// ✨ 메모장 수동 전환 (투명 텍스트 박스 방식에 맞춰 심플해짐)
+window.openMemo = function(num) {
+  const disp = document.getElementById(`memo-disp-${num}`); 
+  const edit = document.getElementById(`memo-edit-${num}`);
+  disp.style.display = 'none'; 
+  edit.style.display = 'block'; 
+  edit.focus();
+};
+window.closeMemo = function(num) {
+  const disp = document.getElementById(`memo-disp-${num}`); const edit = document.getElementById(`memo-edit-${num}`);
+  edit.style.display = 'none'; disp.style.display = 'block'; executeSearch(false, lastSearchType); 
+};
+
+// 숨겨진 독서 기록 창을 오픈하는 함수
+window.revealReading = function(tdEl, key) {
+  if (isReadingMode) return;
+  const readPart = tdEl.querySelector('.reading-part');
+  if (readPart && readPart.style.display === 'none') {
+    readPart.style.display = 'block';
+    if (activeEditor) closeEditor(); 
+    openSection(readPart, 'reading', key, null);
+  }
+};
 
 // ✨ 일기장 글쓰기 로직
 window.openSection = function(sectionEl, type, key, event) {
   if (event) event.stopPropagation();
   if (sectionEl.closest('td').classList.contains('collapsed-year')) { toggleYear(parseInt(sectionEl.closest('td').dataset.year)); return; }
   
-  // 💡 빈 공간 더블클릭 감지 로직 (모바일 호환)
-  const now = Date.now();
-  if (type === 'diary' && (now - lastClickTime < 400) && lastClickKey === key) {
-    lastClickTime = 0; 
-    if (activeEditor) closeEditor(); 
-    revealReading(sectionEl.closest('td'), key); 
-    return;
-  }
-  lastClickTime = now;
-  lastClickKey = key;
-
-  // 창이 이미 열려있을 때 누르면 창을 끄지 않고 "단순히 커서만 움직이도록" 허용
+  // 창이 이미 열려있을 때 누르면 창을 끄지 않고 통과 (글 중간 수정 터치 자유롭게 가능!)
   if (activeEditor && activeEditor.key === key && activeEditor.type === type) return;
   if (activeEditor) closeEditor();
   
   const span = sectionEl.querySelector('.cell-text'); 
   const text = (type === 'reading') ? (readingEntries[key] || '') : (entries[key] || '');
 
-  let caretPos = getCaretPos(event, span, text);
-
   if(span) span.style.display = 'none';
   
   const ta = document.createElement('textarea'); ta.className = 'cell-textarea'; ta.value = text;
   ta.setAttribute('spellcheck', 'false'); 
   
-  // 💡 작성 중인 텍스트칸 내부에서 클릭하거나 더블클릭할 때 이벤트
-  ta.onclick = (e) => {
-    e.stopPropagation(); // 이 한 줄 덕분에 오타 수정하려고 누를 때 버그가 사라집니다.
-    const tNow = Date.now();
-    if (type === 'diary' && (tNow - lastClickTime < 400) && lastClickKey === key) {
-      lastClickTime = 0;
-      closeEditor();
-      revealReading(sectionEl.closest('td'), key);
-      return;
-    }
-    lastClickTime = tNow;
-    lastClickKey = key;
-  };
+  // 💡 작성 중 터치 이벤트 문제 방지: 이벤트가 부모로 흘러가지 않게 막기만 함
+  ta.onclick = (e) => e.stopPropagation();
 
   ta.placeholder = (type === 'reading') ? '📚 읽은 도서 감상평 기록...' : '오늘의 일기 기록 중...';
   if (type === 'reading') ta.style.backgroundColor = '#fdfdfd';
@@ -653,16 +568,15 @@ window.openSection = function(sectionEl, type, key, event) {
   const res = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
   ta.oninput = res; res();
   activeEditor = { sectionEl, ta, span, type, key }; ta.onblur = () => closeEditor();
-
-  if (caretPos >= 0) {
-    setTimeout(() => { ta.setSelectionRange(caretPos, caretPos); }, 10);
-  }
 }
 
 window.closeEditor = function() {
   if (!activeEditor) return; const { sectionEl, ta, span, type, key } = activeEditor; const val = ta.value.trim();
-  if (type === 'diary') { if (val !== (entries[key] || '')) { entries[key] = val; set(ref(db, 'diary_data/' + key), val).then(() => showToast('일기 저장 ✓')); } } 
-  else { if (val !== (readingEntries[key] || '')) { readingEntries[key] = val; set(ref(db, 'reading_data/' + key), val).then(() => showToast('독서 저장 ✓')); } }
+  if (type === 'diary') { 
+    if (val !== (entries[key] || '')) { entries[key] = val; saveData(); showToast('일기 저장 ✓'); } 
+  } else { 
+    if (val !== (readingEntries[key] || '')) { readingEntries[key] = val; saveData(); showToast('독서 저장 ✓'); } 
+  }
   if(span) span.style.display = 'block'; ta.remove(); activeEditor = null; executeSearch(false, lastSearchType);
 }
 
@@ -816,7 +730,7 @@ function scrollToNextMark() {
   
   const memoDisp = targetMark.closest('.memo-disp');
   if (memoDisp) { 
-    const edit = memoDisp.nextElementSibling;
+    const edit = memoDisp.nextElementSibling; 
     let targetScroll = 0;
     
     if (window.innerWidth <= 768) {
@@ -921,8 +835,16 @@ document.getElementById('excel-file-input').onchange = (e) => {
 document.getElementById('btn-import-cancel').onclick = () => { pendingImportData=null; document.getElementById('confirm-modal').classList.remove('open'); };
 document.getElementById('btn-import-confirm').onclick = () => {
   if (!pendingImportData) return; document.getElementById('confirm-modal').classList.remove('open');
-  set(ref(db, 'diary_data'), pendingImportData.entries).then(() => set(ref(db, 'memos'), {memo1: pendingImportData.memo1, memo2: pendingImportData.memo2}))
-    .then(() => { alert("🎉 가져오기 성공!"); memoData[1] = pendingImportData.memo1; memoData[2] = pendingImportData.memo2; executeSearch(false, lastSearchType); pendingImportData=null; showToast('완료 ✅'); }).catch(err => alert("오류: " + err.message));
+  entries = pendingImportData.entries;
+  memoData[1] = pendingImportData.memo1;
+  memoData[2] = pendingImportData.memo2;
+  saveData();
+  alert("🎉 가져오기 성공!"); 
+  document.getElementById('memo-edit-1').value = memoData[1] || '';
+  document.getElementById('memo-edit-2').value = memoData[2] || '';
+  executeSearch(false, lastSearchType); 
+  pendingImportData=null; 
+  showToast('완료 ✅'); 
 };
 
 function openPwModal() { pwStep=1; pwInputs={1:'',2:'',3:''}; renderPwStep(); document.getElementById('pw-modal').classList.add('open'); }
@@ -956,10 +878,6 @@ function handlePwInput() {
   else if (pwStep === 3) { if (pwInputs[3] !== newPw) showPwError(3, '비밀번호가 일치하지 않습니다'); else { localStorage.setItem(PW_KEY, newPw); closePwModal(); showToast('비밀번호 변경 완료 🔑'); } }
 }
 
-window.startFirebaseApp = function() { 
-  syncWithFirebase();  
-};
-
-if (window.isUnlocked) window.startFirebaseApp();
+if (window.isUnlocked) window.startLocalApp();
 
 </script></body></html>
