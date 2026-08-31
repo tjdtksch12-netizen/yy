@@ -234,7 +234,7 @@ body {  background: #ffffff;  font-family: 'Nanum Gothic', 'Noto Sans KR', 'Guli
     <div class="pw-step-label">      <span id="pws-1" class="on">① 현재</span>      <span id="pws-2">② 새 비밀번호</span>      <span id="pws-3">③ 확인</span>    </div>
     <div class="step active" id="pw-step-1">      <div class="modal-desc" style="margin-bottom:12px;">현재 비밀번호를 입력하세요</div>      <div class="pw-pin-dots" id="pw-dots-1">        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>      </div>      <div class="pw-error" id="pw-err-1">비밀번호가 틀렸습니다</div>    </div>
     <div class="step" id="pw-step-2">      <div class="modal-desc" style="margin-bottom:12px;">새 비밀번호 4자리를 입력하세요</div>      <div class="pw-pin-dots" id="pw-dots-2">        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>      </div>      <div class="pw-error" id="pw-err-2"></div>    </div>
-    <div class="step" id="pw-step-3">      <div class="modal-desc" style="margin-bottom:12px;">새 비밀번호를 한 한 번 더 입력하세요</div>      <div class="pw-pin-dots" id="pw-dots-3">        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>      </div>      <div class="pw-error" id="pw-err-3">비밀번호가 일치하지 않습니다</div>    </div>
+    <div class="step" id="pw-step-3">      <div class="modal-desc" style="margin-bottom:12px;">새 비밀번호를 한 번 더 입력하세요</div>      <div class="pw-pin-dots" id="pw-dots-3">        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>        <div class="pw-pin-dot"></div><div class="pw-pin-dot"></div>      </div>      <div class="pw-error" id="pw-err-3">비밀번호가 일치하지 않습니다</div>    </div>
     <div class="pw-numpad" id="pw-numpad">      <button class="pw-num-btn" data-n="1">1</button><button class="pw-num-btn" data-n="2">2</button><button class="pw-num-btn" data-n="3">3</button>      <button class="pw-num-btn" data-n="4">4</button><button class="pw-num-btn" data-n="5">5</button><button class="pw-num-btn" data-n="6">6</button>      <button class="pw-num-btn" data-n="7">7</button><button class="pw-num-btn" data-n="8">8</button><button class="pw-num-btn" data-n="9">9</button>      <button class="pw-num-btn" style="visibility:hidden"></button>      <button class="pw-num-btn" data-n="0">0</button>      <button class="pw-num-btn del">⌫</button>    </div>    <div class="modal-btns">      <button class="modal-btn cancel" id="btn-close-pw">취소</button>    </div>  </div></div>
 <div id="toast">저장되었습니다 ✓</div>
 
@@ -517,7 +517,9 @@ function buildTable() {
       const tr = document.createElement('tr'); tr.className = `day-row month-${m}`;
       if (m !== new Date().getMonth() + 1) tr.classList.add('collapsed-row');
       
-      let rowHtml = `<td class="date-cell" onclick="toggleRowExpand(this.parentElement, event)"><span class="date-label">${m}/${d}</span></td>`;
+      const refDow = new Date(nowD.getFullYear(), m - 1, d).getDay();
+      const dateCellCls = refDow === 0 ? ' sun' : (refDow === 6 ? ' sat' : '');
+      let rowHtml = `<td class="date-cell${dateCellCls}" onclick="toggleRowExpand(this.parentElement, event)"><span class="date-label">${m}/${d}</span></td>`;
       YEARS.forEach(y => {
         const key = `${y}-${m}-${d}`;
         const isToday = (key === todayStr);
@@ -526,7 +528,7 @@ function buildTable() {
         const readStyle = (isToday || hasReadingVal) ? '' : 'display:none;';
 
         // 💡 PC 호환성을 위한 ondblclick 속성 유지
-        rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}">
+        rowHtml += `<td class="entry-cell year-col" data-year="${y}" data-key="${key}" onclick="if(this.classList.contains('collapsed-year')) toggleYear(${y});">
           <div class="entry-container">
             <div class="calendar-part" id="cal-box-${key}"></div>
             <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)" ondblclick="revealReading(this.closest('td'), '${key}')">
@@ -751,7 +753,7 @@ function executeSearch(isNext = false, searchType = 'memo') {
             hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
             dispLine = dispLine.replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>');
           }
-          const safeLine = encodeURIComponent(line); 
+          const safeLine = encodeURIComponent(line).replace(/'/g, '%27'); 
           html += `<div class="cal-event-line"><span class="cal-event-text">${dispLine}</span> <span class="cal-del-btn" onclick="deleteCalendarLine(event, '${key}', '${safeLine}')">❌</span></div>`;
         });
         cDiv.innerHTML = html;
