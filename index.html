@@ -183,8 +183,7 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
 .diary-part { flex: 1; padding: 12px; cursor: text; min-height: 50px; }
 
 /* 독서 기록 추가 버튼 */
-.reading-add { display: none; text-align: right; padding: 2px 8px 4px; font-size: 11px; color: #aaa; cursor: pointer; user-select: none; }
-.reading-add:hover { color: #1a5fa8; }
+.reading-add { display: none; text-align: right; padding: 4px 8px 6px; font-size: 11px; color: #aaa; cursor: pointer; user-select: none; opacity: 0; -webkit-tap-highlight-color: transparent; }
 #table-wrap.reading-mode-active .reading-add { display: none !important; }
 
 /* 하단: 독서 기록 칸 */
@@ -694,6 +693,12 @@ function saveMemo(num) {
 function flushMemos() { [1, 2].forEach(n => { if (memoTimers[n]) saveMemo(n); }); }
 window.addEventListener('pagehide', flushMemos);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushMemos(); });
+
+// 메모 밖을 터치해 스크롤하면 메모 입력 포커스를 해제 (파란 커서/핸들이 따라 올라가는 현상 방지)
+document.addEventListener('touchmove', (e) => {
+  const a = document.activeElement;
+  if (a && a.classList && a.classList.contains('memo-edit') && !(e.target.closest && e.target.closest('.memo-container'))) a.blur();
+}, { passive: true });
 
 function initMemoEditors() {
   [1, 2].forEach(num => {
