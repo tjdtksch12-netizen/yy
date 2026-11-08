@@ -206,6 +206,26 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
 #toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff; padding: 10px 20px; border-radius: 30px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 9600; font-size: 14px; }
 #toast.show { opacity: 1; }
 
+/* 보관함 메뉴 (메모 1 안, 직접 추가/삭제) */
+.memo-label-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 26px; margin-bottom: 5px; }
+.memo-label-row .memo-label { margin-bottom: 0; }
+.secret-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.secret-chip { border: 1.5px solid #333; background: #fff; color: #111; border-radius: 12px; padding: 2px 9px; font-size: 11px; font-weight: bold; font-family: inherit; cursor: pointer; }
+.secret-chip.open { background: #1a5fa8; border-color: #1a5fa8; color: #fff; }
+.secret-chip.add { border-style: dashed; color: #888; }
+#secret-overlay { display: none; position: absolute; inset: 0; z-index: 5; background: #fff; border: 2px solid #1a5fa8; border-radius: 4px; padding: 10px; overflow-y: auto; }
+.secret-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.secret-title { flex: 1; font-weight: bold; font-size: 15px; }
+.secret-title-input { flex: 1; min-width: 0; display: none; font-family: inherit; font-size: 15px; font-weight: bold; padding: 4px 6px; border: 1.5px solid #1a5fa8; border-radius: 4px; }
+.secret-line { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 9px 4px; border-bottom: 1px dashed #e3e3e3; font-size: var(--memo-fs); line-height: 1.5; cursor: pointer; word-break: break-all; }
+.secret-line:last-child { border-bottom: none; }
+.secret-line:active { background: #f0f8ff; }
+.secret-copy { opacity: 0.5; flex-shrink: 0; }
+.secret-empty { font-size: 12px; color: #999; padding: 6px 2px; }
+.secret-edit { width: 100%; min-height: 120px; border: 1.5px solid #1a5fa8; border-radius: 4px; padding: 8px; font-family: inherit; font-size: var(--memo-fs); line-height: 1.6; resize: vertical; }
+.secret-actions { display: flex; gap: 6px; margin-top: 8px; }
+.secret-actions .hbtn { flex: 1; }
+
 /* 구글 로그인 화면 */
 #login-overlay { display: none; position: fixed; inset: 0; z-index: 9500; background: #111; color: #fff; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 
@@ -222,7 +242,9 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
   .memo-wrap:nth-child(2) { display: none; }
   .memo-row.show-memo2 .memo-wrap:nth-child(1) { display: none; }
   .memo-row.show-memo2 .memo-wrap:nth-child(2) { display: flex; }
-  .memo-container { height: calc(100dvh - 260px) !important; min-height: 360px !important; }
+  .memo-container { height: calc(100dvh - 320px) !important; min-height: 300px !important; }
+  .secret-chip { padding: 8px 14px; font-size: 14px; }
+  .memo-label-row { min-height: 0; }
   .memo-box { font-size: 15px; }
 
   .mobile-only { display: block !important; }
@@ -325,15 +347,28 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
         <div class="memo-row">
 
           <div class="memo-wrap">
-            <div class="memo-label">메모 1</div>
+            <div class="memo-label-row"><div class="memo-label">메모 1</div><div class="secret-chips" id="secret-chips"></div></div>
             <div class="memo-container" id="memo-container-1">
               <div class="memo-box memo-disp" id="memo-disp-1"></div>
               <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." spellcheck="false"></textarea>
+              <div id="secret-overlay">
+                <div class="secret-head">
+                  <div class="secret-title" id="secret-title"></div>
+                  <input class="secret-title-input" id="secret-title-input" placeholder="메뉴 이름" maxlength="20">
+                  <button class="hbtn gray" onclick="closeSecretOverlay()">✕</button>
+                </div>
+                <div id="secret-list"></div>
+                <textarea class="secret-edit" id="secret-edit" style="display:none" placeholder="한 줄에 하나씩 입력&#10;예) 신한 1234-5678-9012-3456" spellcheck="false"></textarea>
+                <div class="secret-actions">
+                  <button class="hbtn gray" id="secret-editbtn" onclick="toggleSecretEdit()">✏️ 편집</button>
+                  <button class="hbtn red" onclick="deleteSecretMenu()">🗑️ 삭제</button>
+                </div>
+              </div>
             </div>
           </div>
 
           <div class="memo-wrap">
-            <div class="memo-label">메모 2</div>
+            <div class="memo-label-row"><div class="memo-label">메모 2</div></div>
             <div class="memo-container" id="memo-container-2">
               <div class="memo-box memo-disp" id="memo-disp-2"></div>
               <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." spellcheck="false"></textarea>
@@ -749,6 +784,167 @@ function loadMemos(retry = 0) {
   });
 }
 
+/* ══ 보관함 메뉴 (메모 1 안, 직접 추가/삭제) ══ */
+let secretMenus = [];      // [{ t: '💳 카드', x: '한 줄에 하나씩' }]
+let secretsReady = false;
+let secretOpen = -1;       // 열려 있는 메뉴 번호
+let secretEditing = false;
+let secretTimer = null;
+
+function renderSecretChips() {
+  const box = document.getElementById('secret-chips');
+  box.innerHTML = secretMenus.map((m, i) =>
+    `<button class="secret-chip${i === secretOpen ? ' open' : ''}" onclick="openSecretMenu(${i})">${escHtml(m.t)}</button>`
+  ).join('') + `<button class="secret-chip add" onclick="addSecretMenu()">＋</button>`;
+}
+
+function renderSecretOverlay() {
+  const m = secretMenus[secretOpen];
+  if (!m) { closeSecretOverlay(); return; }
+  document.getElementById('secret-title').textContent = m.t;
+  const lines = (m.x || '').split('\n').map(l => l.trim()).filter(Boolean);
+  document.getElementById('secret-list').innerHTML = lines.length
+    ? lines.map(l => `<div class="secret-line" data-line="${encodeURIComponent(l)}"><span>${escHtml(l)}</span><span class="secret-copy">📋</span></div>`).join('')
+    : '<div class="secret-empty">비어 있어요. ✏️ 편집으로 한 줄에 하나씩 추가하세요</div>';
+}
+
+function saveSecrets() {
+  clearTimeout(secretTimer); secretTimer = null;
+  set(ref(db, 'secrets/menus'), secretMenus);
+}
+function queueSaveSecrets() {
+  clearTimeout(secretTimer);
+  secretTimer = setTimeout(saveSecrets, 800);
+}
+
+function resetSecretEditUI() {
+  secretEditing = false;
+  document.getElementById('secret-edit').style.display = 'none';
+  document.getElementById('secret-title-input').style.display = 'none';
+  document.getElementById('secret-title').style.display = '';
+  document.getElementById('secret-list').style.display = '';
+  document.getElementById('secret-editbtn').textContent = '✏️ 편집';
+}
+
+function finishSecretEdit() {
+  const m = secretMenus[secretOpen];
+  if (m) {
+    const t = document.getElementById('secret-title-input').value.trim();
+    if (t) m.t = t.slice(0, 20);
+    m.x = document.getElementById('secret-edit').value;
+    saveSecrets();
+  }
+  resetSecretEditUI();
+  renderSecretOverlay();
+  renderSecretChips();
+}
+
+window.openSecretMenu = function(i) {
+  if (secretOpen === i) { closeSecretOverlay(); return; }
+  if (secretEditing) finishSecretEdit();
+  secretOpen = i;
+  document.getElementById('secret-overlay').style.display = 'block';
+  renderSecretOverlay();
+  renderSecretChips();
+};
+
+window.closeSecretOverlay = function() {
+  if (secretEditing) finishSecretEdit();
+  secretOpen = -1;
+  document.getElementById('secret-overlay').style.display = 'none';
+  renderSecretChips();
+};
+
+window.toggleSecretEdit = function() {
+  if (secretEditing) { finishSecretEdit(); return; }
+  const m = secretMenus[secretOpen]; if (!m) return;
+  secretEditing = true;
+  const ta = document.getElementById('secret-edit'), ti = document.getElementById('secret-title-input');
+  ta.value = m.x || ''; ti.value = m.t;
+  ta.style.display = 'block'; ti.style.display = 'block';
+  document.getElementById('secret-title').style.display = 'none';
+  document.getElementById('secret-list').style.display = 'none';
+  document.getElementById('secret-editbtn').textContent = '✔️ 완료';
+  ta.focus();
+};
+
+window.addSecretMenu = function() {
+  if (!secretsReady) { showToast('아직 불러오는 중이에요'); return; }
+  const t = (prompt('새 메뉴 이름을 입력하세요 (예: 💳 카드, 와이파이)') || '').trim();
+  if (!t) return;
+  if (secretEditing) finishSecretEdit();
+  secretMenus.push({ t: t.slice(0, 20), x: '' });
+  saveSecrets();
+  secretOpen = -1;
+  openSecretMenu(secretMenus.length - 1);
+  toggleSecretEdit();
+};
+
+window.deleteSecretMenu = function() {
+  const m = secretMenus[secretOpen]; if (!m) return;
+  if (!confirm(`"${m.t}" 메뉴를 삭제할까요?\n(안에 적은 내용도 함께 사라집니다)`)) return;
+  resetSecretEditUI();
+  secretMenus.splice(secretOpen, 1);
+  saveSecrets();
+  secretOpen = -1;
+  document.getElementById('secret-overlay').style.display = 'none';
+  renderSecretChips();
+};
+
+// 입력 중에도 자동 저장 (0.8초 디바운스)
+document.getElementById('secret-edit').addEventListener('input', (e) => {
+  const m = secretMenus[secretOpen]; if (!m) return;
+  m.x = e.target.value;
+  queueSaveSecrets();
+});
+
+function copyText(t) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+  const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  ta.remove(); return Promise.resolve();
+}
+
+// 줄을 누르면 숫자 부분만 복사
+document.addEventListener('click', (e) => {
+  const row = e.target.closest && e.target.closest('.secret-line'); if (!row) return;
+  const line = decodeURIComponent(row.dataset.line);
+  const m = line.match(/\d[\d\- ]{5,}\d/);
+  copyText(m ? m[0].trim() : line).then(() => showToast('복사됨 📋')).catch(() => showToast('복사 실패'));
+});
+
+// 앱을 벗어나면 저장하고 자동으로 접기
+window.addEventListener('pagehide', () => {
+  if (secretEditing) finishSecretEdit(); else if (secretTimer) saveSecrets();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') closeSecretOverlay();
+});
+
+function loadSecrets(retry = 0) {
+  get(child(ref(db), 'secrets')).then(async (snapshot) => {
+    const d = snapshot.exists() ? snapshot.val() : {};
+    if (d.v2) {
+      const v = d.menus || [];
+      secretMenus = (Array.isArray(v) ? v : Object.values(v))
+        .filter(m => m && m.t).map(m => ({ t: String(m.t), x: m.x || '' }));
+    } else {
+      // 이전 버전(카드/계좌번호 고정)의 내용을 새 구조로 옮김
+      secretMenus = [{ t: '💳 카드', x: d.card || '' }, { t: '🏦 계좌번호', x: d.account || '' }];
+      await set(ref(db, 'secrets/menus'), secretMenus);
+      await set(ref(db, 'secrets/v2'), true);
+      if (d.card !== undefined) await set(ref(db, 'secrets/card'), null);
+      if (d.account !== undefined) await set(ref(db, 'secrets/account'), null);
+    }
+    secretsReady = true;
+    renderSecretChips();
+  }).catch(err => {
+    console.warn(err);
+    if (retry < 3) setTimeout(() => loadSecrets(retry + 1), 2000 * (retry + 1));
+    else showToast('보관함 불러오기 실패 ⚠️');
+  });
+}
+
 /* ══ Firebase 동기화 ══ */
 function syncWithFirebase() {
   const triggerRender = () => {
@@ -773,6 +969,7 @@ function syncWithFirebase() {
   onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.deletedCal = true; triggerRender(); });
 
   loadMemos();
+  loadSecrets();
 }
 
 document.getElementById('btn-reading-mode').onclick = () => {
