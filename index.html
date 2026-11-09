@@ -498,7 +498,7 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, set as fbSet, get, child, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -514,6 +514,30 @@ const firebaseConfig = {
 
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
+
+// 모든 저장을 감싸서, 실패하면 바로 알려줌
+let lastFailToast = 0;
+function set(r, v) {
+  return fbSet(r, v).catch((e) => {
+    console.warn(e);
+    if (Date.now() - lastFailToast > 4000) {
+      lastFailToast = Date.now();
+      showToast('⚠️ 저장 실패! 로그인·인터넷 연결을 확인하세요', 6000);
+    }
+    throw e;
+  });
+}
+// 저장 실패가 콘솔에 빨간 에러로 남지 않게 (이미 화면에 알림을 띄움)
+window.addEventListener('unhandledrejection', (e) => { e.preventDefault(); });
+
+let permWarned = false;
+function dbReadError(err) {
+  console.warn(err);
+  if (!permWarned) {
+    permWarned = true;
+    showToast('⚠️ 데이터를 읽을 수 없어요. 허용된 구글 계정으로 로그인했는지 확인하세요', 7000);
+  }
+}
 const auth = getAuth(fbApp);
 
 const GOOGLE_CLIENT_ID = '641946222063-seeq6pj5vr09bv4qhh9ju5nf8rq3agea.apps.googleusercontent.com';
@@ -545,6 +569,7 @@ function applyMonthState(row) {
 let tableBuilt = false;
 
 let collapsedYears = [];
+let yearsBeforeSearch = null;   // 검색으로 펼치기 전 연도 상태
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
 if (window.innerWidth <= 768) collapsedYears = YEARS.filter(y => y !== currentYear);
@@ -701,11 +726,15 @@ async function fetchAndSaveCalendarEvents() {
   showToast("캘린더 데이터 동기화 중...");
   try {
     const cy = new Date().getFullYear();
-    const response = await gapi.client.calendar.events.list({
-      'calendarId': 'primary', 'timeMin': (new Date(cy - 1, 0, 1)).toISOString(), 'timeMax': (new Date(cy + 2, 11, 31)).toISOString(),
-      'showDeleted': false, 'singleEvents': true, 'maxResults': 2500, 'orderBy': 'startTime'
-    });
-    const events = response.result.items;
+    let events = [], pageToken;
+    do {
+      const response = await gapi.client.calendar.events.list({
+        'calendarId': 'primary', 'timeMin': (new Date(cy - 1, 0, 1)).toISOString(), 'timeMax': (new Date(cy + 2, 11, 31)).toISOString(),
+        'showDeleted': false, 'singleEvents': true, 'maxResults': 250, 'orderBy': 'startTime', 'pageToken': pageToken
+      });
+      events = events.concat(response.result.items || []);
+      pageToken = response.result.nextPageToken;
+    } while (pageToken && events.length < 10000);
     if (!events || events.length === 0) return alert("동기화할 일정이 비어있습니다.");
 
     let updatedCount = 0; const newCalEntries = { ...calendarEntries };
@@ -1001,7 +1030,8 @@ function syncWithFirebase() {
     if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
       initialLoadDone = true;
       setTimeout(() => {
-        if (window.innerWidth > 768) {
+        const wantWrite = new URLSearchParams(location.search).has('write');
+        if (window.innerWidth > 768 || wantWrite) {
           goToToday();
         } else {
           window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -1010,10 +1040,10 @@ function syncWithFirebase() {
     }
   };
 
-  onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.diary = true; triggerRender(); });
-  onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.reading = true; triggerRender(); });
-  onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.calendar = true; triggerRender(); });
-  onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { console.warn(err); dataLoaded.deletedCal = true; triggerRender(); });
+  onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { dbReadError(err); dataLoaded.diary = true; triggerRender(); });
+  onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { dbReadError(err); dataLoaded.reading = true; triggerRender(); });
+  onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { dbReadError(err); dataLoaded.calendar = true; triggerRender(); });
+  onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { dbReadError(err); dataLoaded.deletedCal = true; triggerRender(); });
 
   loadMemos();
   loadSecrets();
@@ -1090,11 +1120,13 @@ function buildTable() {
 }
 
 window.toggleYear = function(y) {
+  yearsBeforeSearch = null;
   if (collapsedYears.includes(y)) collapsedYears = collapsedYears.filter(year => year !== y);
   else collapsedYears.push(y);
   applyCollapsedYears();
 };
 document.getElementById('btn-toggle-years').onclick = () => {
+  yearsBeforeSearch = null;
   if (collapsedYears.length === 0) { const cy = new Date().getFullYear(); collapsedYears = YEARS.filter(y => y < cy - 4 || y > cy); }
   else collapsedYears = [];
   applyCollapsedYears();
@@ -1123,6 +1155,7 @@ function updateYearBar() {
 }
 function goToYear(y) {
   if (!y) return;
+  yearsBeforeSearch = null;
   collapsedYears = YEARS.filter(v => v !== y);
   applyCollapsedYears();
   const wrap = document.getElementById('table-wrap'); if (wrap) wrap.scrollLeft = 0;
@@ -1216,19 +1249,24 @@ window.closeEditor = function() {
 
 let lastSearchType = 'memo';
 
+let searchDebounce = null;
 document.getElementById('btn-search-memo').onclick = () => {
+  clearTimeout(searchDebounce);
   lastSearchType = 'memo';
   executeSearch(true, 'memo');
 };
 document.getElementById('btn-search-diary').onclick = () => {
+  clearTimeout(searchDebounce);
   lastSearchType = 'diary';
   executeSearch(true, 'diary');
 };
 document.getElementById('search-input').oninput = () => {
-  executeSearch(false, lastSearchType);
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => executeSearch(false, lastSearchType), 200);
 };
 document.getElementById('search-input').onkeydown = (e) => {
   if (e.key === 'Enter') {
+    clearTimeout(searchDebounce);
     executeSearch(true, lastSearchType);
   }
 };
@@ -1247,7 +1285,7 @@ function executeSearch(isNext = false, searchType = 'memo') {
       const container = document.getElementById(`memo-container-${num}`);
       const text = memoData[num] || '';
       if (query && text.toLowerCase().includes(query)) {
-        disp.innerHTML = escHtml(text).replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>');
+        disp.innerHTML = hlHtml(text, query);
         container.classList.add('memo-match');
       } else {
         disp.innerHTML = escHtml(text); container.classList.remove('memo-match');
@@ -1291,7 +1329,7 @@ function executeSearch(isNext = false, searchType = 'memo') {
           let dispLine = escHtml(line);
           if (query !== '' && line.toLowerCase().includes(query) && searchType === 'diary') {
             hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
-            dispLine = dispLine.replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>');
+            dispLine = hlHtml(line, query);
           }
           const safeLine = encodeURIComponent(line).replace(/'/g, '%27');
           html += `<div class="cal-event-line"><span class="cal-event-text">${dispLine}</span> <span class="cal-del-btn" onclick="deleteCalendarLine(event, '${key}', '${safeLine}')">❌</span></div>`;
@@ -1301,14 +1339,14 @@ function executeSearch(isNext = false, searchType = 'memo') {
 
       if (dOrig.toLowerCase().includes(query) && query !== '' && searchType === 'diary') {
         hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
-        if (dSpan) dSpan.innerHTML = escHtml(dOrig).replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>');
+        if (dSpan) dSpan.innerHTML = hlHtml(dOrig, query);
       } else {
         if (dSpan) dSpan.innerHTML = escHtml(dOrig);
       }
 
       if (rOrig.toLowerCase().includes(query) && query !== '' && searchType === 'diary') {
         hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
-        if (rSpan) rSpan.innerHTML = '📚 ' + escHtml(rOrig).replace(new RegExp(`(${escapeRegExp(query)})`, 'gi'), '<mark>$1</mark>');
+        if (rSpan) rSpan.innerHTML = '📚 ' + hlHtml(rOrig, query);
       } else {
         if (rSpan) rSpan.innerHTML = rOrig ? '📚 ' + escHtml(rOrig) : '';
       }
@@ -1341,7 +1379,11 @@ function executeSearch(isNext = false, searchType = 'memo') {
 
   if (searchType === 'diary') {
     if (matchedYears.size > 0) {
+      if (yearsBeforeSearch === null) yearsBeforeSearch = [...collapsedYears];
       matchedYears.forEach(y => { if (collapsedYears.includes(y)) collapsedYears = collapsedYears.filter(cy => cy !== y); }); applyCollapsedYears();
+    }
+    if (!query && yearsBeforeSearch !== null) {
+      collapsedYears = yearsBeforeSearch; yearsBeforeSearch = null; applyCollapsedYears();
     }
     if (!query && !isReadingMode) {
       monthDividers.forEach(div => div.style.display = '');
@@ -1388,6 +1430,16 @@ function scrollToNextMark() {
 }
 
 function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function hlHtml(raw, query) {
+  const re = new RegExp(escapeRegExp(query), 'gi');
+  let out = '', last = 0, m;
+  while ((m = re.exec(raw)) !== null) {
+    out += escHtml(raw.slice(last, m.index)) + '<mark>' + escHtml(m[0]) + '</mark>';
+    last = m.index + m[0].length;
+    if (m[0].length === 0) re.lastIndex++;
+  }
+  return out + escHtml(raw.slice(last));
+}
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function toggleMonth(m) {
@@ -1396,7 +1448,8 @@ function toggleMonth(m) {
   document.querySelectorAll(`.month-${m}`).forEach(r => r.classList.toggle('collapsed-row', !openMonths.has(m)));
 }
 
-function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); }
+let toastTimer = null;
+function showToast(msg, ms = 2200) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms); }
 
 window.goToToday = function() {
   const searchInput = document.getElementById('search-input');
