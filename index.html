@@ -223,6 +223,13 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
 .secret-copybtn { flex-shrink: 0; width: 44px; border: 1px solid #ccc; background: #f4f4f4; border-radius: 6px; cursor: pointer; font-size: 16px; }
 .secret-copybtn:active { background: #ddd; }
 
+#undo-toast { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 8px 8px 8px 18px; border-radius: 30px; z-index: 9700; font-size: 14px; align-items: center; gap: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); white-space: nowrap; }
+#undo-toast.show { display: flex; }
+#undo-btn { background: #ffb300; color: #111; border: none; border-radius: 20px; padding: 8px 14px; font-weight: bold; font-family: inherit; font-size: 14px; cursor: pointer; }
+
+/* 모바일 연도 이동 줄 */
+#year-bar { display: none; }
+
 /* 구글 로그인 화면 */
 #login-overlay { display: none; position: fixed; inset: 0; z-index: 9500; background: #111; color: #fff; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 
@@ -244,6 +251,11 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
   .memo-label-row { min-height: 0; }
   .memo-box { font-size: 15px; }
 
+  #year-bar { display: flex; position: sticky; top: 0; z-index: 95; background: #fff; border-bottom: 2px solid #111; }
+  #year-bar button { flex: 1; border: none; background: #f4f4f4; font-family: inherit; font-size: 15px; font-weight: bold; color: #333; padding: 14px 0; cursor: pointer; }
+  #year-bar button:active { background: #ddd; }
+  #year-bar button:disabled { visibility: hidden; }
+  #year-bar #yb-cur { flex: 1.2; background: #1a5fa8; color: #fff; }
   .mobile-only { display: block !important; }
   #btn-memo-switch { padding: 14px 0; font-size: 15px; border-radius: 6px; }
 
@@ -417,6 +429,11 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
       <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none">
     </div>
   </div>
+  <div id="year-bar">
+    <button id="yb-prev"></button>
+    <button id="yb-cur"></button>
+    <button id="yb-next"></button>
+  </div>
   <div id="table-wrap">
     <table id="diary-table">
       <thead id="table-head"></thead>
@@ -477,6 +494,7 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
 </div>
 
 <div id="toast">저장되었습니다 ✓</div>
+<div id="undo-toast"><span id="undo-msg"></span><button id="undo-btn">되돌리기</button></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -529,6 +547,7 @@ let tableBuilt = false;
 let collapsedYears = [];
 const currentYear = new Date().getFullYear();
 collapsedYears = YEARS.filter(y => y < currentYear - 4 || y > currentYear);
+if (window.innerWidth <= 768) collapsedYears = YEARS.filter(y => y !== currentYear);
 
 let dataLoaded = { diary: false, reading: false, calendar: false, deletedCal: false };
 let initialLoadDone = false;
@@ -617,17 +636,28 @@ document.getElementById('btn-clean-calendar').onclick = async () => {
   }
 };
 
+let undoTimer = null;
+function showUndoToast(msg, onUndo) {
+  const box = document.getElementById('undo-toast');
+  document.getElementById('undo-msg').textContent = msg;
+  box.classList.add('show');
+  document.getElementById('undo-btn').onclick = () => {
+    clearTimeout(undoTimer); box.classList.remove('show');
+    onUndo();
+  };
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => box.classList.remove('show'), 6000);
+}
+
 window.deleteCalendarLine = function(e, key, encodedLine) {
   e.stopPropagation();
-  if (!confirm('해당 일정을 다이어리에서 삭제하시겠습니까?\n(삭제 후 다시 연동해도 부활하지 않습니다!)')) return;
-
   const lineText = decodeURIComponent(encodedLine);
 
-  let text = calendarEntries[key] || '';
-  let lines = text.split('\n');
-  let newLines = lines.filter(l => l !== lineText);
-  let newText = newLines.join('\n').trim();
+  // 되돌리기용으로 이전 상태 보관
+  const prevText = calendarEntries[key] || '';
+  const prevDeleted = deletedCalendarEvents[key] ? [...deletedCalendarEvents[key]] : null;
 
+  let newText = prevText.split('\n').filter(l => l !== lineText).join('\n').trim();
   calendarEntries[key] = newText;
   set(ref(db, 'calendar_data/' + key), newText);
 
@@ -636,9 +666,16 @@ window.deleteCalendarLine = function(e, key, encodedLine) {
     deletedCalendarEvents[key].push(lineText);
     set(ref(db, 'deleted_calendar_data/' + key), deletedCalendarEvents[key]);
   }
-
-  showToast('일정 삭제됨 🗑️');
   executeSearch(false, lastSearchType);
+
+  showUndoToast('일정 삭제됨', () => {
+    calendarEntries[key] = prevText;
+    set(ref(db, 'calendar_data/' + key), prevText);
+    if (prevDeleted === null) { delete deletedCalendarEvents[key]; set(ref(db, 'deleted_calendar_data/' + key), null); }
+    else { deletedCalendarEvents[key] = prevDeleted; set(ref(db, 'deleted_calendar_data/' + key), prevDeleted); }
+    executeSearch(false, lastSearchType);
+    showToast('복구됨 ↩️');
+  });
 };
 
 /* ══ 구글 캘린더 ══ */
@@ -1065,7 +1102,35 @@ document.getElementById('btn-toggle-years').onclick = () => {
 function applyCollapsedYears() {
   document.querySelectorAll('.year-col').forEach(el => { const y = parseInt(el.dataset.year); if (collapsedYears.includes(y)) el.classList.add('collapsed-year'); else el.classList.remove('collapsed-year'); });
   const btn = document.getElementById('btn-toggle-years'); if (btn) btn.textContent = collapsedYears.length === 0 ? '📅 기본 5년만 보기' : '📅 전체 연도 펼치기';
+  updateYearBar();
 }
+
+
+/* ══ 모바일 연도 이동 줄 ══ */
+function visibleYears() { return YEARS.filter(y => !collapsedYears.includes(y)); }
+function updateYearBar() {
+  const vis = visibleYears();
+  const single = vis.length === 1 ? vis[0] : null;
+  const base = single !== null ? single : currentYear;
+  const prev = document.getElementById('yb-prev'), next = document.getElementById('yb-next'), cur = document.getElementById('yb-cur');
+  if (!prev) return;
+  const iPrev = YEARS.indexOf(base) - 1, iNext = YEARS.indexOf(base) + 1;
+  prev.disabled = iPrev < 0; next.disabled = iNext >= YEARS.length;
+  prev.textContent = iPrev >= 0 ? `‹ ${YEARS[iPrev]}` : '';
+  next.textContent = iNext < YEARS.length ? `${YEARS[iNext]} ›` : '';
+  cur.textContent = single !== null ? `${single}년` : '여러 해 · 올해로';
+  prev.dataset.y = YEARS[iPrev] || ''; next.dataset.y = YEARS[iNext] || '';
+}
+function goToYear(y) {
+  if (!y) return;
+  collapsedYears = YEARS.filter(v => v !== y);
+  applyCollapsedYears();
+  const wrap = document.getElementById('table-wrap'); if (wrap) wrap.scrollLeft = 0;
+}
+document.getElementById('yb-prev').onclick = (e) => goToYear(parseInt(e.currentTarget.dataset.y));
+document.getElementById('yb-next').onclick = (e) => goToYear(parseInt(e.currentTarget.dataset.y));
+document.getElementById('yb-cur').onclick = () => goToYear(currentYear);
+updateYearBar();
 
 window.toggleRowExpand = function(rowEl, event) {
   event.stopPropagation(); const isExpanded = rowEl.classList.contains('expanded-row');
