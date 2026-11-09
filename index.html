@@ -210,10 +210,12 @@ td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; ver
 .memo-label-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 26px; margin-bottom: 5px; }
 .memo-label-row .memo-label { margin-bottom: 0; }
 .secret-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.memo-label-row .memo-label { cursor: pointer; padding: 3px 10px; border-radius: 12px; font-size: 12px; user-select: none; -webkit-tap-highlight-color: transparent; }
+.memo-label-row .memo-label.on { background: #333; color: #fff; }
 .secret-chip { border: 1.5px solid #333; background: #fff; color: #111; border-radius: 12px; padding: 2px 9px; font-size: 11px; font-weight: bold; font-family: inherit; cursor: pointer; }
 .secret-chip.open { background: #1a5fa8; border-color: #1a5fa8; color: #fff; }
 .secret-chip.add { border-style: dashed; color: #888; }
-#secret-overlay { display: none; flex-direction: column; position: absolute; inset: 0; z-index: 5; background: #fff; border: 2px solid #1a5fa8; border-radius: 4px; padding: 10px; overflow-y: auto; }
+.secret-overlay { display: none; flex-direction: column; position: absolute; inset: 0; z-index: 5; background: #fff; border: 2px solid #1a5fa8; border-radius: 4px; padding: 10px; overflow-y: auto; }
 .secret-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
 .secret-title-input { flex: 1; min-width: 0; font-family: inherit; font-size: 15px; font-weight: bold; padding: 6px 8px; border: 1px solid transparent; border-radius: 4px; background: #f4f4f4; }
 .secret-title-input:focus { border-color: #1a5fa8; outline: none; background: #fff; }
@@ -369,27 +371,36 @@ td.entry-cell.has-photo .photo-add { display: none !important; }
         <div class="memo-row">
 
           <div class="memo-wrap">
-            <div class="memo-label-row"><div class="memo-label">메모 1</div><div class="secret-chips" id="secret-chips"></div></div>
+            <div class="memo-label-row"><div class="memo-label on" id="memo-label-1" title="메모 보기" onclick="closeSecretOverlay(1)">메모 1</div><div class="secret-chips" id="secret-chips-1"></div></div>
             <div class="memo-container" id="memo-container-1">
               <div class="memo-box memo-disp" id="memo-disp-1"></div>
               <textarea class="memo-box memo-edit" id="memo-edit-1" placeholder="메모 1..." spellcheck="false"></textarea>
-              <div id="secret-overlay">
+              <div class="secret-overlay" id="secret-overlay-1">
                 <div class="secret-head">
-                  <input class="secret-title-input" id="secret-title-input" maxlength="20" placeholder="메뉴 이름" spellcheck="false">
-                  <button class="hbtn blue" title="커서가 있는 줄(또는 선택한 부분) 복사" onmousedown="event.preventDefault()" onclick="copySecretLine()">📋</button>
-                  <button class="hbtn red" onclick="deleteSecretMenu()">🗑️</button>
-                  <button class="hbtn gray" onclick="closeSecretOverlay()">✕</button>
+                  <input class="secret-title-input" id="secret-title-input-1" maxlength="20" placeholder="메뉴 이름" spellcheck="false">
+                  <button class="hbtn blue" title="커서가 있는 줄(또는 선택한 부분) 복사" onmousedown="event.preventDefault()" onclick="copySecretLine(1)">📋</button>
+                  <button class="hbtn red" onclick="deleteSecretMenu(1)">🗑️</button>
+                  <button class="hbtn gray" onclick="closeSecretOverlay(1)">✕</button>
                 </div>
-                <textarea class="secret-text" id="secret-text" placeholder="여기에 자유롭게 적으세요&#10;예) 신한 1234-5678-9012-3456" spellcheck="false"></textarea>
+                <textarea class="secret-text" id="secret-text-1" placeholder="여기에 자유롭게 적으세요&#10;예) 신한 1234-5678-9012-3456" spellcheck="false"></textarea>
               </div>
             </div>
           </div>
 
           <div class="memo-wrap">
-            <div class="memo-label-row"><div class="memo-label">메모 2</div></div>
+            <div class="memo-label-row"><div class="memo-label on" id="memo-label-2" title="메모 보기" onclick="closeSecretOverlay(2)">메모 2</div><div class="secret-chips" id="secret-chips-2"></div></div>
             <div class="memo-container" id="memo-container-2">
               <div class="memo-box memo-disp" id="memo-disp-2"></div>
               <textarea class="memo-box memo-edit" id="memo-edit-2" placeholder="메모 2..." spellcheck="false"></textarea>
+              <div class="secret-overlay" id="secret-overlay-2">
+                <div class="secret-head">
+                  <input class="secret-title-input" id="secret-title-input-2" maxlength="20" placeholder="메뉴 이름" spellcheck="false">
+                  <button class="hbtn blue" title="커서가 있는 줄(또는 선택한 부분) 복사" onmousedown="event.preventDefault()" onclick="copySecretLine(2)">📋</button>
+                  <button class="hbtn red" onclick="deleteSecretMenu(2)">🗑️</button>
+                  <button class="hbtn gray" onclick="closeSecretOverlay(2)">✕</button>
+                </div>
+                <textarea class="secret-text" id="secret-text-2" placeholder="여기에 자유롭게 적으세요&#10;예) 신한 1234-5678-9012-3456" spellcheck="false"></textarea>
+              </div>
             </div>
           </div>
 
@@ -868,113 +879,125 @@ function loadMemos(retry = 0) {
   });
 }
 
-/* ══ 보관함 메뉴 (메모 1 안, 바로 입력 + 자동 저장) ══ */
-let secretMenus = [];      // [{ t: '💳 카드', x: '한 줄에 하나씩' }]
+/* ══ 보관함 메뉴 (메모 1·2 각각, 바로 입력 + 자동 저장) ══ */
+const vaults = {
+  1: { menus: [], open: -1, timer: null, path: 'secrets/menus' },
+  2: { menus: [], open: -1, timer: null, path: 'secrets/menus2' }
+};
 let secretsReady = false;
-let secretOpen = -1;       // 열려 있는 메뉴 번호
-let secretTimer = null;
+const $v = (n, name) => document.getElementById(`secret-${name}-${n}`);
 
 function escAttr(s) { return escHtml(String(s)).replace(/"/g, '&quot;'); }
 
-function renderSecretChips() {
-  const box = document.getElementById('secret-chips');
-  box.innerHTML = secretMenus.map((m, i) =>
-    `<button class="secret-chip${i === secretOpen ? ' open' : ''}" onclick="openSecretMenu(${i})">${escHtml(m.t)}</button>`
-  ).join('') + `<button class="secret-chip add" onclick="addSecretMenu()">＋</button>`;
+function renderSecretChips(n) {
+  const v = vaults[n];
+  $v(n, 'chips').innerHTML = v.menus.map((m, i) =>
+    `<button class="secret-chip${i === v.open ? ' open' : ''}" onclick="openSecretMenu(${n},${i})">${escHtml(m.t)}</button>`
+  ).join('') + `<button class="secret-chip add" onclick="addSecretMenu(${n})">＋</button>`;
+  const lab = document.getElementById(`memo-label-${n}`);
+  if (lab) lab.classList.toggle('on', v.open < 0);   // 메모가 보이는 중이면 라벨 강조
 }
 
-function renderSecretOverlay() {
-  const m = secretMenus[secretOpen];
+function renderSecretOverlay(n) {
+  const v = vaults[n], m = v.menus[v.open];
   if (!m) return;
-  document.getElementById('secret-title-input').value = m.t;
-  document.getElementById('secret-text').value = m.x || '';
+  $v(n, 'title-input').value = m.t;
+  $v(n, 'text').value = m.x || '';
 }
 
-function saveSecrets() {
-  clearTimeout(secretTimer); secretTimer = null;
-  set(ref(db, 'secrets/menus'), secretMenus);
+function saveSecrets(n) {
+  const v = vaults[n];
+  clearTimeout(v.timer); v.timer = null;
+  set(ref(db, v.path), v.menus);
 }
-function queueSaveSecrets() {
-  clearTimeout(secretTimer);
-  secretTimer = setTimeout(saveSecrets, 600);
-}
-
-// 화면의 입력칸들 → 데이터로 모으기
-function collectSecret() {
-  const m = secretMenus[secretOpen]; if (!m) return;
-  m.x = document.getElementById('secret-text').value;
+function queueSaveSecrets(n) {
+  const v = vaults[n];
+  clearTimeout(v.timer);
+  v.timer = setTimeout(() => saveSecrets(n), 600);
 }
 
-window.openSecretMenu = function(i) {
-  if (secretOpen === i) { closeSecretOverlay(); return; }
-  if (secretOpen >= 0) { collectSecret(); if (secretTimer) saveSecrets(); }
-  secretOpen = i;
-  document.getElementById('secret-overlay').style.display = 'flex';
-  renderSecretOverlay();
-  renderSecretChips();
+function collectSecret(n) {
+  const v = vaults[n], m = v.menus[v.open]; if (!m) return;
+  m.x = $v(n, 'text').value;
+}
+
+window.openSecretMenu = function(n, i) {
+  const v = vaults[n];
+  if (v.open === i) { closeSecretOverlay(n); return; }
+  if (v.open >= 0) { collectSecret(n); if (v.timer) saveSecrets(n); }
+  v.open = i;
+  $v(n, 'overlay').style.display = 'flex';
+  renderSecretOverlay(n);
+  renderSecretChips(n);
 };
 
-window.closeSecretOverlay = function() {
-  if (secretOpen >= 0) { collectSecret(); if (secretTimer) saveSecrets(); }
-  secretOpen = -1;
+// 닫기 = 메모 보기 (메모 라벨/✕/같은 메뉴 다시 누르기)
+window.closeSecretOverlay = function(n) {
+  const v = vaults[n];
+  if (v.open >= 0) { collectSecret(n); if (v.timer) saveSecrets(n); }
+  v.open = -1;
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-  document.getElementById('secret-overlay').style.display = 'none';
-  renderSecretChips();
+  $v(n, 'overlay').style.display = 'none';
+  renderSecretChips(n);
 };
 
-window.addSecretMenu = function() {
+window.addSecretMenu = function(n) {
   if (!secretsReady) { showToast('아직 불러오는 중이에요'); return; }
+  const v = vaults[n];
   const t = (prompt('새 메뉴 이름을 입력하세요 (예: 💳 카드, 와이파이)') || '').trim();
   if (!t) return;
-  if (secretOpen >= 0) { collectSecret(); }
-  secretMenus.push({ t: t.slice(0, 20), x: '' });
-  saveSecrets();
-  secretOpen = -1;
-  openSecretMenu(secretMenus.length - 1);
-  document.getElementById('secret-text').focus();
+  if (v.open >= 0) collectSecret(n);
+  v.menus.push({ t: t.slice(0, 20), x: '' });
+  saveSecrets(n);
+  v.open = -1;
+  openSecretMenu(n, v.menus.length - 1);
+  $v(n, 'text').focus();
 };
 
-window.deleteSecretMenu = function() {
-  const m = secretMenus[secretOpen]; if (!m) return;
+window.deleteSecretMenu = function(n) {
+  const v = vaults[n], m = v.menus[v.open]; if (!m) return;
   if (!confirm(`"${m.t}" 메뉴를 삭제할까요?\n(안에 적은 내용도 함께 사라집니다)`)) return;
-  secretMenus.splice(secretOpen, 1);
-  saveSecrets();
-  secretOpen = -1;
-  document.getElementById('secret-overlay').style.display = 'none';
-  renderSecretChips();
+  v.menus.splice(v.open, 1);
+  saveSecrets(n);
+  v.open = -1;
+  $v(n, 'overlay').style.display = 'none';
+  renderSecretChips(n);
 };
 
-const secretText = document.getElementById('secret-text');
-
-// 입력하면 바로 저장
-secretText.addEventListener('input', () => { collectSecret(); queueSaveSecrets(); });
-secretText.addEventListener('blur', () => { collectSecret(); if (secretTimer) saveSecrets(); });
-
-// 메뉴 이름도 바로 저장
-document.getElementById('secret-title-input').addEventListener('input', (e) => {
-  const m = secretMenus[secretOpen]; if (!m) return;
-  const t = e.target.value.trim();
-  if (!t) return;
-  m.t = t.slice(0, 20);
-  renderSecretChips();
-  queueSaveSecrets();
-});
-document.getElementById('secret-title-input').addEventListener('blur', (e) => {
-  const m = secretMenus[secretOpen]; if (!m) return;
-  e.target.value = m.t;
-  if (secretTimer) saveSecrets();
+[1, 2].forEach(n => {
+  const ta = $v(n, 'text'), ti = $v(n, 'title-input');
+  // 입력하면 바로 저장
+  ta.addEventListener('input', () => { collectSecret(n); queueSaveSecrets(n); });
+  ta.addEventListener('blur', () => { collectSecret(n); if (vaults[n].timer) saveSecrets(n); });
+  // 메뉴 이름도 바로 저장
+  ti.addEventListener('input', (e) => {
+    const v = vaults[n], m = v.menus[v.open]; if (!m) return;
+    const t = e.target.value.trim(); if (!t) return;
+    m.t = t.slice(0, 20);
+    renderSecretChips(n);
+    queueSaveSecrets(n);
+  });
+  ti.addEventListener('blur', (e) => {
+    const v = vaults[n], m = v.menus[v.open]; if (!m) return;
+    e.target.value = m.t;
+    if (v.timer) saveSecrets(n);
+  });
 });
 
 function copyText(t) {
-  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
-  const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); } catch (e) {}
-  ta.remove(); return Promise.resolve();
+  const fallback = () => new Promise((res, rej) => {
+    const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove(); ok ? res() : rej(new Error('copy failed'));
+  });
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).catch(fallback);
+  return fallback();
 }
 
 // 📋 버튼 → 선택한 부분이 있으면 그대로, 없으면 커서가 있는 줄의 번호 부분만 복사
-window.copySecretLine = function() {
-  const ta = secretText, v = ta.value;
+window.copySecretLine = function(n) {
+  const ta = $v(n, 'text'), v = ta.value;
   let t = '';
   if (ta.selectionStart !== ta.selectionEnd) {
     t = v.slice(ta.selectionStart, ta.selectionEnd).trim();
@@ -990,32 +1013,34 @@ window.copySecretLine = function() {
   copyText(t).then(() => showToast('복사됨 📋')).catch(() => showToast('복사 실패'));
 };
 
-// 앱을 벗어나면 저장하고 자동으로 접기
+// 앱을 벗어나면 저장하고 자동으로 메모 화면으로
 window.addEventListener('pagehide', () => {
-  if (secretOpen >= 0) collectSecret();
-  if (secretTimer) saveSecrets();
+  [1, 2].forEach(n => { if (vaults[n].open >= 0) collectSecret(n); if (vaults[n].timer) saveSecrets(n); });
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') closeSecretOverlay();
+  if (document.visibilityState === 'hidden') [1, 2].forEach(n => closeSecretOverlay(n));
 });
+
+function normMenus(v) {
+  return (Array.isArray(v) ? v : Object.values(v || {})).filter(m => m && m.t).map(m => ({ t: String(m.t), x: m.x || '' }));
+}
 
 function loadSecrets(retry = 0) {
   get(child(ref(db), 'secrets')).then(async (snapshot) => {
     const d = snapshot.exists() ? snapshot.val() : {};
     if (d.v2) {
-      const v = d.menus || [];
-      secretMenus = (Array.isArray(v) ? v : Object.values(v))
-        .filter(m => m && m.t).map(m => ({ t: String(m.t), x: m.x || '' }));
+      vaults[1].menus = normMenus(d.menus);
     } else {
       // 이전 버전(카드/계좌번호 고정)의 내용을 새 구조로 옮김
-      secretMenus = [{ t: '💳 카드', x: d.card || '' }, { t: '🏦 계좌번호', x: d.account || '' }];
-      await set(ref(db, 'secrets/menus'), secretMenus);
+      vaults[1].menus = [{ t: '💳 카드', x: d.card || '' }, { t: '🏦 계좌번호', x: d.account || '' }];
+      await set(ref(db, 'secrets/menus'), vaults[1].menus);
       await set(ref(db, 'secrets/v2'), true);
       if (d.card !== undefined) await set(ref(db, 'secrets/card'), null);
       if (d.account !== undefined) await set(ref(db, 'secrets/account'), null);
     }
+    vaults[2].menus = normMenus(d.menus2);
     secretsReady = true;
-    renderSecretChips();
+    renderSecretChips(1); renderSecretChips(2);
   }).catch(err => {
     console.warn(err);
     if (retry < 3) setTimeout(() => loadSecrets(retry + 1), 2000 * (retry + 1));
@@ -1547,6 +1572,7 @@ function scrollToNextMark() {
 
   const memoDisp = targetMark.closest('.memo-disp');
   if (memoDisp) {
+    { const mn = memoDisp.id === 'memo-disp-2' ? 2 : 1; if (vaults[mn].open >= 0) closeSecretOverlay(mn); }
     // 모바일에서는 검색어가 있는 메모로 자동 전환
     if (window.innerWidth <= 768) {
       setMobileMemo(memoDisp.id === 'memo-disp-2' ? 2 : 1);
