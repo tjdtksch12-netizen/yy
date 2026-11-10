@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>📓</title>
-<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -158,9 +161,9 @@ td.date-cell { position: sticky; left: 0; z-index: 10; background: #f4f4f4; bord
 .sat .date-label { color: #1a55bb; }
 .day-row { transition: height 0.2s; }
 .day-row.expanded-row td { height: 260px !important; vertical-align: top; }
-th.year-col { cursor: pointer; transition: all 0.2s ease; }
+th.year-col { cursor: pointer; }
 th.year-col:hover { background: #dcdcdc; }
-.year-title-text { transition: all 0.2s ease; display: block; }
+.year-title-text { display: block; }
 th.collapsed-year { width: 36px !important; min-width: 36px !important; max-width: 36px !important; padding: 0 !important; background: #ebebeb; }
 th.collapsed-year:hover { background: #dfdfdf; }
 th.collapsed-year .year-title-text { writing-mode: vertical-rl; text-orientation: upright; padding: 10px 0; font-size: 13px; letter-spacing: 2px; margin: 0 auto; color: #888; }
@@ -168,7 +171,7 @@ td.entry-cell.collapsed-year { width: 36px !important; min-width: 36px !importan
 td.entry-cell.collapsed-year:hover { background: #eeeeee; }
 td.entry-cell.collapsed-year > * { display: none !important; }
 
-td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; vertical-align: top; width: 220px; transition: all 0.2s ease; padding: 0 !important; height: 1px; }
+td.entry-cell { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; vertical-align: top; width: 220px; padding: 0 !important; height: 1px; }
 .entry-container { display: flex; flex-direction: column; height: 100%; }
 
 /* 상단: 캘린더 칸 */
@@ -846,7 +849,7 @@ function initMemoEditors() {
 
     edit.addEventListener('blur', () => {
       if (memoTimers[num]) saveMemo(num);
-      executeSearch(false, lastSearchType);
+      renderMemoDisp(document.getElementById('search-input').value.trim().toLowerCase(), lastSearchType);
     });
   });
 }
@@ -860,7 +863,7 @@ function setMemoReady(ok) {
     e.placeholder = ok ? `메모 ${n}...` : '⚠️ 메모를 불러오지 못했습니다. 새로고침 해주세요';
   });
   if (ok && !memoInited) { initMemoEditors(); memoInited = true; }
-  executeSearch(false, lastSearchType);
+  renderMemoDisp(document.getElementById('search-input').value.trim().toLowerCase(), lastSearchType);
 }
 
 function loadMemos(retry = 0) {
@@ -1057,21 +1060,22 @@ let viewerFull = null;
 
 function pkParts(key) { return { y: key.slice(0, 4), md: key.slice(5) }; }
 
+function renderPhotoCell(td, data) {
+  const part = td.querySelector('.photo-part'); if (!part) return;
+  const t = data[td.dataset.key.slice(5)];
+  if (t) {
+    if (part._src !== t) {
+      const im = new Image(); im.decoding = 'async'; im.alt = '대표 사진'; im.src = t;
+      part.innerHTML = ''; part.appendChild(im); part._src = t;
+    }
+    part.style.display = 'block'; td.classList.add('has-photo');
+  } else {
+    part.innerHTML = ''; part._src = null; part.style.display = 'none'; td.classList.remove('has-photo');
+  }
+}
 function renderYearPhotos(y) {
   const data = photoThumbs[y] || {};
-  document.querySelectorAll(`td.entry-cell[data-year="${y}"]`).forEach(td => {
-    const part = td.querySelector('.photo-part'); if (!part) return;
-    const t = data[td.dataset.key.slice(5)];
-    if (t) {
-      if (part._src !== t) {
-        const im = new Image(); im.decoding = 'async'; im.alt = '대표 사진'; im.src = t;
-        part.innerHTML = ''; part.appendChild(im); part._src = t;
-      }
-      part.style.display = 'block'; td.classList.add('has-photo');
-    } else {
-      part.innerHTML = ''; part._src = null; part.style.display = 'none'; td.classList.remove('has-photo');
-    }
-  });
+  document.querySelectorAll(`td.entry-cell[data-year="${y}"]`).forEach(td => renderPhotoCell(td, data));
 }
 
 function ensurePhotoListener(y) {
@@ -1185,8 +1189,9 @@ window.deletePhoto = async function() {
 /* ══ Firebase 동기화 ══ */
 function syncWithFirebase() {
   photosEnabled = true;
-  const triggerRender = () => {
-    if (!tableBuilt) { buildTable(); tableBuilt = true; }
+  const allLoaded = () => dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal;
+  const doRender = () => {
+    if (!tableBuilt) { if (!allLoaded()) return; buildTable(); tableBuilt = true; }
     executeSearch(false, lastSearchType);
 
     if (!initialLoadDone && dataLoaded.diary && dataLoaded.reading && dataLoaded.calendar && dataLoaded.deletedCal) {
@@ -1201,11 +1206,19 @@ function syncWithFirebase() {
       }, 150);
     }
   };
+  let renderTimer = null;
+  const triggerRender = () => {
+    if (renderTimer) return;
+    renderTimer = setTimeout(() => { renderTimer = null; doRender(); }, 80);
+  };
 
   onValue(ref(db, 'diary_data'), (snapshot) => { entries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.diary = true; triggerRender(); }, (err) => { dbReadError(err); dataLoaded.diary = true; triggerRender(); });
   onValue(ref(db, 'reading_data'), (snapshot) => { readingEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.reading = true; triggerRender(); }, (err) => { dbReadError(err); dataLoaded.reading = true; triggerRender(); });
   onValue(ref(db, 'calendar_data'), (snapshot) => { calendarEntries = snapshot.exists() ? snapshot.val() : {}; dataLoaded.calendar = true; triggerRender(); }, (err) => { dbReadError(err); dataLoaded.calendar = true; triggerRender(); });
   onValue(ref(db, 'deleted_calendar_data'), (snapshot) => { deletedCalendarEvents = snapshot.exists() ? snapshot.val() : {}; dataLoaded.deletedCal = true; triggerRender(); }, (err) => { dbReadError(err); dataLoaded.deletedCal = true; triggerRender(); });
+
+  // 일부 데이터가 늦어도 표가 비어 있지 않도록 안전장치
+  setTimeout(() => { if (!tableBuilt) { Object.keys(dataLoaded).forEach(k => { dataLoaded[k] = true; }); triggerRender(); } }, 4000);
 
   loadMemos();
   loadSecrets();
@@ -1231,54 +1244,107 @@ window.revealReading = function(tdEl, key) {
   }
 };
 
+// 날짜 줄은 필요한 것만 만든다 (평소엔 펼친 달, 검색할 땐 결과가 있는 날짜만)
+const builtDays = new Map();   // 달 → 이미 만든 날짜들
+const rowEls = new Map();      // 달*100+날짜 → <tr> (줄을 끼워 넣을 위치를 찾는 데 씀)
+function daysIn(m) { return m === 2 ? 29 : ([4, 6, 9, 11].includes(m) ? 30 : 31); }
+
+// from~to일의 날짜 줄 HTML (칸은 비워 둠)
+function dayRowsHtml(m, from, to) {
+  const nowD = new Date();
+  const todayStr = `${nowD.getFullYear()}-${nowD.getMonth() + 1}-${nowD.getDate()}`;
+  const closed = openMonths.has(m) ? '' : ' collapsed-row';
+  let html = '';
+  for (let d = from; d <= to; d++) {
+    const refDow = new Date(nowD.getFullYear(), m - 1, d).getDay();
+    const dateCellCls = refDow === 0 ? ' sun' : (refDow === 6 ? ' sat' : '');
+    html += `<tr class="day-row month-${m}${closed}"><td class="date-cell${dateCellCls}" onclick="toggleRowExpand(this.parentElement, event)"><span class="date-label">${m}/${d}</span></td>`;
+    YEARS.forEach(y => {
+      const key = `${y}-${m}-${d}`;
+      html += `<td class="entry-cell year-col${collapsedYears.includes(y) ? ' collapsed-year' : ''}${key === todayStr ? ' is-today' : ''}" data-year="${y}" data-key="${key}" onclick="if(this.classList.contains('collapsed-year')) toggleYear(${y});"></td>`;
+    });
+    html += '</tr>';
+  }
+  return html;
+}
+
+// 날짜 줄 만들기. days가 없으면 그 달 전체, 있으면 그 날짜들만 (이미 있는 줄은 건너뜀). 새로 만든 줄 목록을 돌려줌
+function ensureRows(m, days) {
+  const n = daysIn(m);
+  let have = builtDays.get(m);
+  if (have && have.size >= n) return [];
+  const div = document.querySelector(`.month-divider[data-month="${m}"]`);
+  if (!div) return [];
+  if (!have) { have = new Set(); builtDays.set(m, have); }
+  const need = [];
+  if (days) { days.forEach(d => { if (d >= 1 && d <= n && !have.has(d)) need.push(d); }); need.sort((x, y) => x - y); }
+  else for (let d = 1; d <= n; d++) if (!have.has(d)) need.push(d);
+  const made = [];
+  for (let i = 0; i < need.length;) {
+    let j = i; while (j + 1 < need.length && need[j + 1] === need[j] + 1) j++;
+    const a = need[i], b = need[j];
+    let p = a - 1; while (p >= 1 && !have.has(p)) p--;          // 바로 앞에 있는 줄(없으면 달 구분줄) 뒤에 끼워 넣음
+    const anchor = p >= 1 ? rowEls.get(m * 100 + p) : div;
+    anchor.insertAdjacentHTML('afterend', dayRowsHtml(m, a, b));
+    let tr = anchor.nextElementSibling;
+    for (let d = a; d <= b; d++, tr = tr.nextElementSibling) { rowEls.set(m * 100 + d, tr); have.add(d); made.push(tr); }
+    i = j + 1;
+  }
+  return made;
+}
+
+// 새로 만든 줄에서 보이는 해의 칸만 채움 (render=false면 호출한 쪽에서 곧바로 그림)
+function fillNewRows(rows, render = true) {
+  if (!rows.length) return;
+  const todayStr = todayKey();
+  rows.forEach(tr => {
+    for (let i = 1; i < tr.children.length; i++) {
+      const td = tr.children[i];
+      if (td.classList.contains('collapsed-year')) continue;
+      td.innerHTML = cellInner(td.dataset.key, todayStr);
+      if (render) renderCell(td, curQuery, curSearchType, todayStr);
+      const pd = photoThumbs[td.dataset.year];
+      if (pd && pd[td.dataset.key.slice(5)]) renderPhotoCell(td, pd);
+    }
+  });
+}
+function ensureMonthBuilt(m) { fillNewRows(ensureRows(m, null)); }
+
+// 지금 화면에 필요한 날짜 줄: 달 → 날짜들 (null이면 그 달 전체). 검색·독서 모아보기는 해당 날짜만.
+function rowsFor(query, searchType) {
+  const plan = new Map();
+  const normal = !isReadingMode && (searchType !== 'diary' || query === '');
+  if (normal) { openMonths.forEach(m => plan.set(m, null)); return plan; }
+  const dq = searchType === 'diary' && query !== '';
+  const md = k => { const p = k.split('-'); return p[1] * 100 + +p[2]; };
+  const inYears = k => YEARS.includes(parseInt(k));
+  const readingRows = new Set();
+  for (const k in readingEntries) { const v = readingEntries[k]; if (v && v.trim() !== '' && inYears(k)) readingRows.add(md(k)); }
+  let rows;
+  if (isReadingMode && !dq) rows = readingRows;
+  else {
+    rows = new Set();
+    [entries, readingEntries, calendarEntries].forEach(map => {
+      for (const k in map) { const v = map[k]; if (v && inYears(k) && String(v).toLowerCase().includes(query)) rows.add(md(k)); }
+    });
+    if (isReadingMode) rows = new Set([...rows].filter(x => readingRows.has(x)));
+  }
+  rows.forEach(x => { const m = Math.floor(x / 100); let st = plan.get(m); if (!st) plan.set(m, st = new Set()); st.add(x % 100); });
+  return plan;
+}
+
 function buildTable() {
   const thead = document.getElementById('table-head'); const tbody = document.getElementById('table-body');
-  tbody.innerHTML = '';
+  builtDays.clear(); rowEls.clear();
 
   let headHtml = '<tr><th style="left:0;z-index:60;">날짜</th>';
   YEARS.forEach(y => { headHtml += `<th class="year-col" data-year="${y}" onclick="toggleYear(${y})" title="클릭하여 연도 접기/펼치기"><div class="year-title-text">${y}년</div></th>`; });
   headHtml += '</tr>'; thead.innerHTML = headHtml;
 
-  const nowD = new Date();
-  const todayStr = `${nowD.getFullYear()}-${nowD.getMonth() + 1}-${nowD.getDate()}`;
-
-  MONTHS.forEach(m => {
-    const monthRow = document.createElement('tr'); monthRow.className = 'month-divider'; monthRow.setAttribute('data-month', m);
-    monthRow.innerHTML = `<td colspan="${YEARS.length + 1}">${m}월</td>`; monthRow.onclick = () => toggleMonth(m);
-    tbody.appendChild(monthRow);
-
-    for (let d = 1; d <= 31; d++) {
-      if (m === 2 && d > 29) continue; if ([4, 6, 9, 11].includes(m) && d > 30) continue;
-      const tr = document.createElement('tr'); tr.className = `day-row month-${m}`;
-      if (!openMonths.has(m)) tr.classList.add('collapsed-row');
-
-      const refDow = new Date(nowD.getFullYear(), m - 1, d).getDay();
-      const dateCellCls = refDow === 0 ? ' sun' : (refDow === 6 ? ' sat' : '');
-      let rowHtml = `<td class="date-cell${dateCellCls}" onclick="toggleRowExpand(this.parentElement, event)"><span class="date-label">${m}/${d}</span></td>`;
-      YEARS.forEach(y => {
-        const key = `${y}-${m}-${d}`;
-        const isToday = (key === todayStr);
-        const hasReadingVal = readingEntries[key] && readingEntries[key].trim() !== '';
-        const readStyle = (isToday || hasReadingVal) ? '' : 'display:none;';
-
-        rowHtml += `<td class="entry-cell year-col${isToday ? ' is-today' : ''}" data-year="${y}" data-key="${key}" onclick="if(this.classList.contains('collapsed-year')) toggleYear(${y});">
-          <div class="entry-container">
-            <button class="photo-add" title="대표 사진" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); pickPhoto('${key}')">📷</button>
-            <div class="calendar-part" id="cal-box-${key}"></div>
-            <div class="photo-part" onclick="event.stopPropagation(); openPhoto('${key}')"></div>
-            <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)">
-              <span class="cell-text"></span>
-            </div>
-            <div class="reading-add" onclick="event.stopPropagation(); revealReading(this.closest('td'), '${key}')">＋📚 독서 기록</div>
-            <div class="reading-part" onclick="openSection(this, 'reading', '${key}', event)" style="${readStyle}">
-              <span class="cell-text"></span>
-            </div>
-          </div>
-        </td>`;
-      });
-      tr.innerHTML = rowHtml; tbody.appendChild(tr);
-    }
-  });
+  let html = '';
+  MONTHS.forEach(m => { html += `<tr class="month-divider" data-month="${m}"><td colspan="${YEARS.length + 1}">${m}월</td></tr>`; });
+  tbody.innerHTML = html;
+  tbody.querySelectorAll('.month-divider').forEach(tr => { tr.onclick = () => toggleMonth(parseInt(tr.dataset.month)); });
 
   applyCollapsedYears();
 }
@@ -1299,6 +1365,7 @@ function applyCollapsedYears() {
   document.querySelectorAll('.year-col').forEach(el => { const y = parseInt(el.dataset.year); if (collapsedYears.includes(y)) el.classList.add('collapsed-year'); else el.classList.remove('collapsed-year'); });
   const btn = document.getElementById('btn-toggle-years'); if (btn) btn.textContent = collapsedYears.length === 0 ? '📅 기본 5년만 보기' : '📅 전체 연도 펼치기';
   updateYearBar();
+  YEARS.forEach(y => { if (!collapsedYears.includes(y)) ensureYearBuilt(y); });
   if (photosEnabled) YEARS.forEach(y => { if (!collapsedYears.includes(y)) ensurePhotoListener(y); });
 }
 
@@ -1411,7 +1478,9 @@ window.closeEditor = function() {
   if (type === 'diary') { if (val !== (entries[key] || '')) { entries[key] = val; set(ref(db, 'diary_data/' + key), val).then(() => showToast('일기 저장 ✓')); } }
   else { if (val !== (readingEntries[key] || '')) { readingEntries[key] = val; set(ref(db, 'reading_data/' + key), val).then(() => showToast('독서 저장 ✓')); } }
   { const td = sectionEl.closest('td'); setTimeout(() => td.classList.remove('editing'), 600); }
-  if (span) span.style.display = 'block'; ta.remove(); activeEditor = null; executeSearch(false, lastSearchType);
+  if (span) span.style.display = 'block'; ta.remove(); activeEditor = null;
+  if (!document.getElementById('search-input').value.trim() && !isReadingMode) renderCell(sectionEl.closest('td'), '', curSearchType, todayKey());
+  else executeSearch(false, lastSearchType);
 };
 
 let lastSearchType = 'memo';
@@ -1438,34 +1507,104 @@ document.getElementById('search-input').onkeydown = (e) => {
   }
 };
 
+// 칸 안쪽 HTML (보이는 해만 만들어서 화면 요소 수를 줄임)
+function cellInner(key, todayStr) {
+  const isToday = (key === todayStr);
+  const hasReadingVal = readingEntries[key] && readingEntries[key].trim() !== '';
+  const readStyle = (isToday || hasReadingVal) ? '' : 'display:none;';
+  return `<div class="entry-container">
+            <button class="photo-add" title="대표 사진" onmousedown="event.preventDefault()" onclick="event.stopPropagation(); pickPhoto('${key}')">📷</button>
+            <div class="calendar-part" id="cal-box-${key}"></div>
+            <div class="photo-part" onclick="event.stopPropagation(); openPhoto('${key}')"></div>
+            <div class="diary-part" onclick="openSection(this, 'diary', '${key}', event)">
+              <span class="cell-text"></span>
+            </div>
+            <div class="reading-add" onclick="event.stopPropagation(); revealReading(this.closest('td'), '${key}')">＋📚 독서 기록</div>
+            <div class="reading-part" onclick="openSection(this, 'reading', '${key}', event)" style="${readStyle}">
+              <span class="cell-text"></span>
+            </div>
+          </div>`;
+}
+
+function todayKey() { const n = new Date(); return `${n.getFullYear()}-${n.getMonth() + 1}-${n.getDate()}`; }
+let curQuery = '', curSearchType = 'memo';
+
+// 칸 하나를 그리고, 검색어에 해당하는지 알려줌. 접힌 연도는 그리지 않고 검사만 함.
+function renderCell(td, query, searchType, todayStr) {
+  const key = td.dataset.key;
+  const dOrig = entries[key] || '', rOrig = readingEntries[key] || '', cOrig = calendarEntries[key] || '';
+  const reading = rOrig.trim() !== '';
+  const dSearch = query !== '' && searchType === 'diary';
+  const match = dSearch && (dOrig.toLowerCase().includes(query) || rOrig.toLowerCase().includes(query) || cOrig.toLowerCase().includes(query));
+
+  if (!td.firstElementChild) return { match, reading };            // 아직 안 만든 칸
+  if (td.classList.contains('collapsed-year')) { td._stale = true; return { match, reading }; }   // 접힌 해: 펼칠 때 다시 그림
+  td._stale = false;
+
+  const dSpan = td.querySelector('.diary-part .cell-text'), rSpan = td.querySelector('.reading-part .cell-text');
+  const cDiv = td.querySelector('.calendar-part'), rPart = td.querySelector('.reading-part'), addBtn = td.querySelector('.reading-add');
+
+  if (rPart && !isReadingMode) {
+    const show = (key === todayStr || reading);
+    rPart.style.display = show ? '' : 'none';
+    if (addBtn) addBtn.style.display = show ? 'none' : 'block';
+  }
+
+  if (cOrig.trim() !== '') {
+    cDiv.style.display = 'block';
+    let html = '';
+    cOrig.split('\n').filter(l => l.trim() !== '').forEach(line => {
+      const dispLine = (dSearch && line.toLowerCase().includes(query)) ? hlHtml(line, query) : escHtml(line);
+      const safeLine = encodeURIComponent(line).replace(/'/g, '%27');
+      html += `<div class="cal-event-line"><span class="cal-event-text">${dispLine}</span> <span class="cal-del-btn" onclick="deleteCalendarLine(event, '${key}', '${safeLine}')">❌</span></div>`;
+    });
+    cDiv.innerHTML = html;
+  } else { cDiv.style.display = 'none'; cDiv.innerHTML = ''; }
+
+  if (dSpan) dSpan.innerHTML = (dSearch && dOrig.toLowerCase().includes(query)) ? hlHtml(dOrig, query) : escHtml(dOrig);
+  if (rSpan) rSpan.innerHTML = reading || rOrig ? ((dSearch && rOrig.toLowerCase().includes(query)) ? '📚 ' + hlHtml(rOrig, query) : '📚 ' + escHtml(rOrig)) : '';
+  return { match, reading };
+}
+
+// 보이는 해의 칸만 만들고(처음 한 번), 접혀 있는 동안 바뀐 칸은 다시 그림
+function ensureYearBuilt(y) {
+  const todayStr = todayKey();
+  let built = false;
+  document.querySelectorAll(`td.entry-cell[data-year="${y}"]`).forEach(td => {
+    if (!td.firstElementChild) { td.innerHTML = cellInner(td.dataset.key, todayStr); built = true; renderCell(td, curQuery, curSearchType, todayStr); }
+    else if (td._stale) renderCell(td, curQuery, curSearchType, todayStr);
+  });
+  if (built && typeof renderYearPhotos === 'function') renderYearPhotos(y);
+}
+
+// 메모 칸 표시(검색어 강조)
+function renderMemoDisp(query, searchType) {
+  [1, 2].forEach(num => {
+    const disp = document.getElementById(`memo-disp-${num}`);
+    const container = document.getElementById(`memo-container-${num}`);
+    const text = memoData[num] || '';
+    if (searchType === 'memo' && query && text.toLowerCase().includes(query)) {
+      disp.innerHTML = hlHtml(text, query);
+      container.classList.add('memo-match');
+    } else {
+      disp.innerHTML = escHtml(text); container.classList.remove('memo-match');
+    }
+  });
+}
+
 function executeSearch(isNext = false, searchType = 'memo') {
   const query = document.getElementById('search-input').value.trim().toLowerCase();
   if (isNext && query !== '' && query === lastSearchQuery) { scrollToNextMark(); return; }
   lastSearchQuery = query; currentMarkIdx = 0;
 
+  curQuery = query; curSearchType = searchType;
+  renderMemoDisp(query, searchType);
+
+  const newRows = [];
+  rowsFor(query, searchType).forEach((days, m) => ensureRows(m, days).forEach(tr => newRows.push(tr)));
+  fillNewRows(newRows, false);          // 칸 내용은 아래 반복문에서 그림
   const dayRows = document.querySelectorAll('.day-row');
   const monthDividers = document.querySelectorAll('.month-divider');
-
-  if (searchType === 'memo') {
-    [1, 2].forEach(num => {
-      const disp = document.getElementById(`memo-disp-${num}`);
-      const container = document.getElementById(`memo-container-${num}`);
-      const text = memoData[num] || '';
-      if (query && text.toLowerCase().includes(query)) {
-        disp.innerHTML = hlHtml(text, query);
-        container.classList.add('memo-match');
-      } else {
-        disp.innerHTML = escHtml(text); container.classList.remove('memo-match');
-      }
-    });
-  } else {
-    [1, 2].forEach(num => {
-      const disp = document.getElementById(`memo-disp-${num}`);
-      const container = document.getElementById(`memo-container-${num}`);
-      disp.innerHTML = escHtml(memoData[num] || '');
-      container.classList.remove('memo-match');
-    });
-  }
 
   const activeMonths = new Set(); let matchedYears = new Set();
   const nowD = new Date();
@@ -1474,50 +1613,12 @@ function executeSearch(isNext = false, searchType = 'memo') {
   dayRows.forEach(row => {
     let hasMatch = false; let hasReadingInRow = false;
 
-    row.querySelectorAll('.entry-cell').forEach(td => {
-      const key = td.dataset.key; const dOrig = entries[key] || ''; const rOrig = readingEntries[key] || ''; const cOrig = calendarEntries[key] || '';
-      if (rOrig.trim() !== '') hasReadingInRow = true;
-
-      const dSpan = td.querySelector('.diary-part .cell-text'); const rSpan = td.querySelector('.reading-part .cell-text'); const cDiv = td.querySelector('.calendar-part');
-      const rPart = td.querySelector('.reading-part');
-      const addBtn = td.querySelector('.reading-add');
-
-      if (rPart && !isReadingMode) {
-        const show = (key === todayStr || rOrig.trim() !== '');
-        rPart.style.display = show ? '' : 'none';
-        if (addBtn) addBtn.style.display = show ? 'none' : 'block';
-      }
-
-      if (cOrig.trim() !== '') {
-        cDiv.style.display = 'block';
-        const lines = cOrig.split('\n').filter(l => l.trim() !== '');
-        let html = '';
-        lines.forEach(line => {
-          let dispLine = escHtml(line);
-          if (query !== '' && line.toLowerCase().includes(query) && searchType === 'diary') {
-            hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
-            dispLine = hlHtml(line, query);
-          }
-          const safeLine = encodeURIComponent(line).replace(/'/g, '%27');
-          html += `<div class="cal-event-line"><span class="cal-event-text">${dispLine}</span> <span class="cal-del-btn" onclick="deleteCalendarLine(event, '${key}', '${safeLine}')">❌</span></div>`;
-        });
-        cDiv.innerHTML = html;
-      } else { cDiv.style.display = 'none'; cDiv.innerHTML = ''; }
-
-      if (dOrig.toLowerCase().includes(query) && query !== '' && searchType === 'diary') {
-        hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
-        if (dSpan) dSpan.innerHTML = hlHtml(dOrig, query);
-      } else {
-        if (dSpan) dSpan.innerHTML = escHtml(dOrig);
-      }
-
-      if (rOrig.toLowerCase().includes(query) && query !== '' && searchType === 'diary') {
-        hasMatch = true; matchedYears.add(parseInt(td.dataset.year));
-        if (rSpan) rSpan.innerHTML = '📚 ' + hlHtml(rOrig, query);
-      } else {
-        if (rSpan) rSpan.innerHTML = rOrig ? '📚 ' + escHtml(rOrig) : '';
-      }
-    });
+    for (let i = 1; i < row.children.length; i++) {
+      const td = row.children[i];
+      const r = renderCell(td, query, searchType, todayStr);
+      if (r.reading) hasReadingInRow = true;
+      if (r.match) { hasMatch = true; matchedYears.add(parseInt(td.dataset.year)); }
+    }
 
     if (searchType === 'memo') {
       row.style.display = '';
@@ -1542,7 +1643,11 @@ function executeSearch(isNext = false, searchType = 'memo') {
     }
   });
 
-  monthDividers.forEach(div => { div.style.display = activeMonths.has(div.getAttribute('data-month')) ? '' : 'none'; });
+  // 평소 화면에서는 아직 안 만든 달의 구분줄도 그대로 보여 줌
+  const normalMode = !isReadingMode && (searchType !== 'diary' || query === '');
+  monthDividers.forEach(div => {
+    div.style.display = (normalMode || activeMonths.has(div.getAttribute('data-month'))) ? '' : 'none';
+  });
 
   if (searchType === 'diary') {
     if (matchedYears.size > 0) {
@@ -1613,6 +1718,7 @@ function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 function toggleMonth(m) {
   if (document.getElementById('search-input').value.trim() || isReadingMode) return;
   if (openMonths.has(m)) openMonths.delete(m); else openMonths.add(m);
+  if (openMonths.has(m)) ensureMonthBuilt(m);
   document.querySelectorAll(`.month-${m}`).forEach(r => r.classList.toggle('collapsed-row', !openMonths.has(m)));
 }
 
@@ -1635,9 +1741,9 @@ window.goToToday = function() {
   }
 
   setTimeout(() => {
+    if (!openMonths.has(m)) toggleMonth(m); else ensureMonthBuilt(m);
     const targetTd = document.querySelector(`td[data-key="${key}"]`);
     if (targetTd) {
-      if (!openMonths.has(m)) toggleMonth(m);
 
       const targetDiaryPart = targetTd.querySelector('.diary-part');
       if (targetDiaryPart) openSection(targetDiaryPart, 'diary', key, null);
